@@ -12,13 +12,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+load("@com_github_renatoutsch_rules_system//system:defs.bzl", "system_select")
+
 package(default_visibility = ["//visibility:public"])
 
 licenses(["notice"])  # BSD 3-clause
 
-_LINK_DEFS = select({
-    ":windows": ["-lpsapi"],
-    "//conditions:default": ["-lpthread"],
+_COMPILE_DEFS = system_select({
+    "windows": [],
+    "default": ["-pthread"],
+})
+
+_LINK_DEFS = system_select({
+    "windows": ["-lpsapi"],
+    "macos": [],
+    "default": ["-pthread"],
 })
 
 cc_library(
@@ -52,6 +60,7 @@ cc_library(
     ),
     hdrs = glob(["googletest/include/gtest/**/*.h"]),
     includes = ["googletest"],
+    copts = _COMPILE_DEFS,
     linkopts = _LINK_DEFS,
     strip_include_prefix = "googletest/include",
 )
@@ -79,10 +88,4 @@ cc_test(
     deps = [
         ":gtest",
     ],
-)
-
-config_setting(
-    name = "windows",
-    values = {"cpu": "x64_windows_msvc"},
-    visibility = ["//visibility:private"],
 )

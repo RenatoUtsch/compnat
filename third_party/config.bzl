@@ -23,42 +23,6 @@
 # Taken from https://github.com/antonovvk/bazel_rules/blob/master/config.bzl
 # Modified a little bit.
 
-def _gen_config_impl(ctx):
-    output = ctx.outputs.out
-
-    content = ""
-    for k, v in ctx.attr.values.items():
-        content += "#define %s %s\n" % (k, v)
-
-    ctx.file_action(
-        output = output,
-        content = content
-    )
-
-gen_config_rule = rule(
-    attrs = {
-        "values": attr.string_dict(mandatory = True),
-        "file": attr.string(mandatory = True),
-    },
-    output_to_genfiles = True,
-    outputs = {"out": "%{file}"},
-    implementation = _gen_config_impl,
-)
-
-def cc_gen_config(name, file, values, visibility=None, includes=None):
-    config = gen_config_rule(
-        name = name + "_impl",
-        file = file,
-        values = values,
-    )
-
-    native.cc_library(
-        name = name,
-        hdrs = [file],
-        visibility = visibility,
-        includes = includes,
-    )
-
 def _fix_config_impl(ctx):
     input = ctx.file.file
     output = ctx.outputs.out
@@ -103,7 +67,7 @@ fix_config_rule = rule(
 )
 
 def cc_fix_config(name, files, values, cmake=False, visibility=None, includes=None):
-    hdrs = []
+    srcs = []
     for input, output in files.items():
         fix_config_rule(
             name = input + "_impl",
@@ -112,11 +76,9 @@ def cc_fix_config(name, files, values, cmake=False, visibility=None, includes=No
             output = output,
             values = values,
         )
-        hdrs.append(output)
+        srcs.append(output)
 
-    native.cc_library(
+    native.filegroup(
         name = name,
-        hdrs = hdrs,
-        visibility = visibility,
-        includes = includes,
+        srcs = srcs,
     )

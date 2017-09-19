@@ -37,19 +37,6 @@ http_archive(
     urls = ["https://github.com/RenatoUtsch/rules_system/archive/master.zip"],
 )
 
-load(
-    "@com_github_renatoutsch_rules_system//system:defs.bzl",
-    "local_cc_library",
-)
-
-new_http_archive(
-    name = "googletest",
-    build_file = "third_party/googletest.BUILD",
-    sha256 = "f3ed3b58511efd272eb074a3a6d6fb79d7c2e6a0e374323d1e6bcbcc1ef141bf",
-    strip_prefix = "googletest-release-1.8.0",
-    urls = ["https://github.com/google/googletest/archive/release-1.8.0.zip"],
-)
-
 http_archive(
     name = "com_github_gflags_gflags",
     sha256 = "4e44b69e709c826734dbbbd5208f61888a2faf63f239d73d8ba0011b2dccc97a",
@@ -63,4 +50,12 @@ new_http_archive(
     sha256 = "267103f8a1e9578978aa1dc256001e6529ef593e5aea38193d31c2872ee025e8",
     strip_prefix = "glog-0.3.5",
     urls = ["https://github.com/google/glog/archive/v0.3.5.zip"],
+)
+
+new_http_archive(
+    name = "com_github_google_googletest",
+    build_file = "third_party/googletest.BUILD",
+    sha256 = "f3ed3b58511efd272eb074a3a6d6fb79d7c2e6a0e374323d1e6bcbcc1ef141bf",
+    strip_prefix = "googletest-release-1.8.0",
+    urls = ["https://github.com/google/googletest/archive/release-1.8.0.zip"],
 )

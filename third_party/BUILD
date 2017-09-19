@@ -13,3 +13,23 @@
 # limitations under the License.
 
 package(default_visibility = ["//visibility:public"])
+
+alias(
+    name = "gflags",
+    actual = "@com_github_gflags_gflags//:gflags",
+)
+
+alias(
+    name = "glog",
+    actual = "@com_github_google_glog//:glog",
+)
+
+alias(
+    name = "gtest",
+    actual = "@com_github_google_googletest//:gtest",
+)
+
+alias(
+    name = "gmock",
+    actual = "@com_github_google_googletest//:gmock",
+)

@@ -21,8 +21,8 @@ cc_library(
     hdrs = ["representation.hpp"],
     copts = COMPNAT_CPP_COPTS,
     deps = [
-        "@com_github_gflags_gflags//:gflags",
-        "@com_github_google_glog//:glog",
+        "//third_party:gflags",
+        "//third_party:glog",
     ],
 )
 
@@ -32,6 +32,6 @@ cc_test(
     srcs = ["representation_test.cpp"],
     deps = [
         ":representation",
-        "@googletest//:gtest",
+        "//third_party:gtest",
     ],
 )

@@ -1,8 +1,92 @@
 # https://github.com/antonovvk/bazel_glog/blob/master/glog.BUILD
 
+load("@com_github_renatoutsch_compnat//third_party:config.bzl", "cc_fix_config")
+load("@com_github_renatoutsch_rules_system//system:defs.bzl", "system_select")
+
+package(default_visibility = ["//visibility:public"])
+
 licenses(["notice"])
 
-load("@com_github_renatoutsch_compnat//third_party:config.bzl", "cc_fix_config")
+_THREAD_COPTS = system_select({
+    "windows": [],
+    "default": ["-pthread"],
+})
+
+_THREAD_LINKOPTS = system_select({
+    "windows": ["-lpsapi"],
+    "macos": [],
+    "default": ["-pthread"],
+})
+
+_WARNINGS_COPTS = system_select({
+    "windows": [],
+    "default": [
+        "-Wno-deprecated-declarations",
+        "-Wno-unused-function",
+        "-Wno-unused-variable",
+        "-Wno-sign-compare",
+        "-Wno-invalid-noreturn",
+    ],
+})
+
+cc_library(
+    name = "glog",
+    hdrs = [
+        "src/demangle.h",
+        "src/mock-log.h",
+        "src/stacktrace.h",
+        "src/symbolize.h",
+        "src/utilities.h",
+        "src/base/commandlineflags.h",
+        "src/base/googleinit.h",
+        "src/base/mutex.h",
+        "src/glog/log_severity.h",
+        ":gen_headers",
+    ],
+    srcs = [
+        "src/demangle.cc",
+        "src/logging.cc",
+        "src/raw_logging.cc",
+        "src/signalhandler.cc",
+        "src/symbolize.cc",
+        "src/utilities.cc",
+        "src/vlog_is_on.cc",
+        ":gen_config",
+    ],
+    deps = [
+        "@com_github_gflags_gflags//:gflags",
+    ],
+    includes = ["src"],
+    copts = _THREAD_COPTS + _WARNINGS_COPTS,
+    linkopts = _THREAD_LINKOPTS,
+)
+
+cc_fix_config(
+    name = "gen_headers",
+    files = {
+        "src/glog/logging.h.in": "glog/logging.h",
+        "src/glog/raw_logging.h.in": "glog/raw_logging.h",
+        "src/glog/stl_logging.h.in": "glog/stl_logging.h",
+        "src/glog/vlog_is_on.h.in": "glog/vlog_is_on.h",
+    },
+    values = {
+        "ac_cv_have_unistd_h": "1",
+        "ac_cv_have_stdint_h": "1",
+        "ac_cv_have_systypes_h": "1",
+        "ac_cv_have_libgflags_h": "1",
+        "ac_cv_have_libgflags": "1",
+        "ac_cv_have_uint16_t": "1",
+        "ac_cv_have___builtin_expect": "1",
+        "ac_google_start_namespace": "namespace google {",
+        "ac_google_end_namespace": "}",
+        "ac_google_namespace": "google",
+        "ac_cv___attribute___noinline": "__attribute__((noinline))",
+        "ac_cv___attribute___noreturn": "__attribute__((noreturn))",
+        "ac_cv___attribute___printf_4_5": "__attribute__((__format__ (__printf__, 4, 5)))",
+    },
+    includes = ["."],
+    visibility = ["//visibility:private"],
+)
 
 cc_fix_config(
     name = "gen_config",
@@ -48,72 +132,4 @@ cc_fix_config(
     },
     includes = ["."],
     visibility = ["//visibility:private"],
-)
-
-cc_fix_config(
-    name = "gen_headers",
-    files = {
-        "src/glog/logging.h.in": "glog/logging.h",
-        "src/glog/raw_logging.h.in": "glog/raw_logging.h",
-        "src/glog/stl_logging.h.in": "glog/stl_logging.h",
-        "src/glog/vlog_is_on.h.in": "glog/vlog_is_on.h",
-    },
-    values = {
-        "ac_cv_have_unistd_h": "1",
-        "ac_cv_have_stdint_h": "1",
-        "ac_cv_have_systypes_h": "1",
-        "ac_cv_have_libgflags_h": "1",
-        "ac_cv_have_libgflags": "1",
-        "ac_cv_have_uint16_t": "1",
-        "ac_cv_have___builtin_expect": "1",
-        "ac_google_start_namespace": "namespace google {",
-        "ac_google_end_namespace": "}",
-        "ac_google_namespace": "google",
-        "ac_cv___attribute___noinline": "__attribute__((noinline))",
-        "ac_cv___attribute___noreturn": "__attribute__((noreturn))",
-        "ac_cv___attribute___printf_4_5": "__attribute__((__format__ (__printf__, 4, 5)))",
-    },
-    includes = ["."],
-    visibility = ["//visibility:private"],
-)
-
-cc_library(
-    visibility = ["//visibility:public"],
-    name = "glog",
-    deps = [
-        "@com_github_gflags_gflags//:gflags",
-        ":gen_config",
-        ":gen_headers",
-    ],
-    includes = [
-        "src",
-    ],
-    srcs = [
-        "src/demangle.cc",
-        "src/logging.cc",
-        "src/raw_logging.cc",
-        "src/signalhandler.cc",
-        "src/symbolize.cc",
-        "src/utilities.cc",
-        "src/vlog_is_on.cc",
-    ],
-    hdrs = [
-        "src/demangle.h",
-        "src/mock-log.h",
-        "src/stacktrace.h",
-        "src/symbolize.h",
-        "src/utilities.h",
-        "src/base/commandlineflags.h",
-        "src/base/googleinit.h",
-        "src/base/mutex.h",
-        "src/glog/log_severity.h",
-    ],
-    copts = [
-        "-Wno-deprecated-declarations",
-        "-Wno-unused-function",
-        "-Wno-invalid-noreturn",
-    ],
-    linkopts = [
-        "-lpthread",
-    ],
 )
