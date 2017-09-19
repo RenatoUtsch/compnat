@@ -56,7 +56,10 @@ cc_library(
     deps = [
         "@com_github_gflags_gflags//:gflags",
     ],
-    includes = ["src"],
+    includes = [
+        ".",
+        "src",
+    ],
     copts = _THREAD_COPTS + _WARNINGS_COPTS,
     linkopts = _THREAD_LINKOPTS,
 )
