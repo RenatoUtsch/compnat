@@ -62,8 +62,7 @@ template <typename T, class RNG>
 Node<T> grow(RNG &rng, int maxHeight,
              const std::vector<Primitive<T>> &functions,
              const std::vector<Primitive<T>> &terminals) {
-  // Initialize with only functions. This way, tree will have height at least 2.
-  Node<T> root(randomPrimitive(rng, functions));
+  Node<T> root(randomPrimitive(rng, functions, terminals));
 
   std::stack<std::pair<Node<T> *, int>> nodes;
   nodes.emplace(&root, 1);

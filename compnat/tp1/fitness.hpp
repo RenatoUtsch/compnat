@@ -38,4 +38,20 @@ T fitness(const Node<T> &individual,
   return std::sqrt(error / data.size());
 }
 
+/**
+ * Calculates the fitness for all individuals and returns it in a vector.
+ * This vector is in the same order of the individuals vector.
+ */
+template <typename T>
+std::vector<T> fitness(const std::vector<Node<T>> &individuals,
+                       const std::vector<std::pair<EvalInput<T>, T>> &data) {
+  // TODO(renatoutsch): implement this in parallel.
+  std::vector<T> results(individuals.size());
+  for (size_t i = 0; i < individuals.size(); ++i) {
+    results[i] = fitness(individuals[i], data);
+  }
+
+  return results;
+}
+
 #endif // !COMPNAT_TP1_FITNESS_HPP

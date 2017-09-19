@@ -78,11 +78,26 @@ public:
   /// Returns the child at index i.
   const Node<T> &child(int i) const { return children_[i]; }
 
+  /// Returns the mutable child at index i.
+  Node<T> &mutableChild(int i) { return children_[i]; }
+
   /// Number of children the node currently has.
-  int numChildren() const { return children_.size(); }
+  size_t numChildren() const { return children_.size(); }
 
   /// If the node is terminal.
   bool isTerminal() const { return op_ && op_.numRequiredChildren == 0; }
+
+  /**
+   * Size of the tree, aka number of elements in this entire subtree.
+   * If using this multiple times, best to pre-compute it once and reuse it.
+   */
+  size_t size() const {
+    size_t size = 1;
+    for (const auto &child : children_) {
+      size += child.size();
+    }
+    return size;
+  }
 
 private:
   Primitive<T> op_;
