@@ -51,25 +51,33 @@ new_http_archive(
 )
 
 http_archive(
+    name = "bazel_rules",
+    sha256 = "1809280f87836d88420f8b4f36ed65fe197a72ac6d3f0373d9aeb1a425afb4d2",
+    strip_prefix = "bazel_rules-157d1fb34fbf5e292fef9501f67c303a5b1e6fe2",
+    urls = ["https://github.com/antonovvk/bazel_rules/archive/157d1fb34fbf5e292fef9501f67c303a5b1e6fe2.zip"],
+)
+
+http_archive(
     name = "com_github_gflags_gflags",
     sha256 = "4e44b69e709c826734dbbbd5208f61888a2faf63f239d73d8ba0011b2dccc97a",
     strip_prefix = "gflags-2.2.1",
     urls = ["https://github.com/gflags/gflags/archive/v2.2.1.zip"],
 )
 
-# TODO(renatoutsch): Replace this with proper vendoring.
-local_cc_library(
+new_http_archive(
+    name = "com_github_google_glog",
+    build_file = "third_party/glog.BUILD",
+    sha256 = "267103f8a1e9578978aa1dc256001e6529ef593e5aea38193d31c2872ee025e8",
+    strip_prefix = "glog-0.3.5",
+    urls = ["https://github.com/google/glog/archive/v0.3.5.zip"],
+)
+
+bind(
     name = "glog",
-    hdrs = [
-        "glog/log_severity.h",
-        "glog/logging.h",
-        "glog/raw_logging.h",
-        "glog/stl_logging.h",
-        "glog/vlog_is_on.h",
-    ],
-    libs = {
-        "windows": ["glog.dll"],
-        "macos": ["libglog.dylib"],
-        "default": ["libglog.so"],
-    },
+    actual = "@com_github_google_glog//:glog",
+)
+
+bind(
+    name = "gflags",
+    actual = "@com_github_gflags_gflags//:gflags",
 )

@@ -12,25 +12,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//compnat:defs.bzl", "COMPNAT_CPP_COPTS")
-
-package(default_visibility = ["//visibility:private"])
-
-cc_library(
-    name = "representation",
-    hdrs = ["representation.hpp"],
-    copts = COMPNAT_CPP_COPTS,
-    deps = [
-        "//external:gflags",
-        "//external:glog",
-    ],
-)
-
-cc_test(
-    name = "representation_test",
-    srcs = ["representation_test.cpp"],
-    deps = [
-        ":representation",
-        "@googletest//:gtest",
-    ],
-)
+package(default_visibility = ["//visibility:public"])

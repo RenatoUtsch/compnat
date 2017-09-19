@@ -25,6 +25,8 @@
 
 #include <glog/logging.h>
 
+template <typename T, class RNG> class Node;
+
 /**
  * Input for evaluation of a node.
  * It's a simple map from each input variable to it's value.
@@ -129,19 +131,20 @@ public:
   /**
    * Creates a tree node from the given primitive.
    */
-  Node(const Primitive<T, RNG> &op = Primitive<T, RNG>()) : op_(op) {
-    if (op_) {
-      children_.resize(op.numRequiredChildren);
+  Node(const Primitive<T, RNG> &op = Primitive<T, RNG>())
+      : numRequiredChildren_(op.numRequiredChildren), evalFn_(op.evalFn),
+        strFn_(op.strFn) {
+    if (evalFn_) {
+      CHECK(strFn_);
+      children_.resize(numRequiredChildren_);
     }
   }
 
   /// Evaluates the value of the node.
-  T eval(const EvalInput<T> &input) const {
-    return op_.evalFn(input, children_);
-  }
+  T eval(const EvalInput<T> &input) const { return evalFn_(input, children_); }
 
   /// Returns the string equivalent of the tree.
-  std::string str() const { return op_.strFn(children_); }
+  std::string str() const { return strFn_(children_); }
 
   /// Replaces a given child.
   void setChild(int i, const Node<T, RNG> &&newChild) {
@@ -158,7 +161,7 @@ public:
   size_t numChildren() const { return children_.size(); }
 
   /// If the node is terminal.
-  bool isTerminal() const { return op_ && op_.numRequiredChildren == 0; }
+  bool isTerminal() const { return evalFn_ && numRequiredChildren_ == 0; }
 
   /**
    * Size of the tree, aka number of elements in this entire subtree.
@@ -173,7 +176,9 @@ public:
   }
 
 private:
-  Primitive<T, RNG> op_;
+  int numRequiredChildren_;
+  EvalFn<T, RNG> evalFn_;
+  StrFn<T, RNG> strFn_;
   Children<T, RNG> children_;
 };
 
