@@ -21,13 +21,14 @@ cc_library(
     hdrs = ["representation.hpp"],
     copts = COMPNAT_CPP_COPTS,
     deps = [
-        "//external:gflags",
-        "//external:glog",
+        "@com_github_gflags_gflags//:gflags",
+        "@com_github_google_glog//:glog",
     ],
 )
 
 cc_test(
     name = "representation_test",
+    size = "small",
     srcs = ["representation_test.cpp"],
     deps = [
         ":representation",

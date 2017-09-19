@@ -81,7 +81,7 @@ cc_library(
     visibility = ["//visibility:public"],
     name = "glog",
     deps = [
-        "//external:gflags",
+        "@com_github_gflags_gflags//:gflags",
         ":gen_config",
         ":gen_headers",
     ],
