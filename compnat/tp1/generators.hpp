@@ -121,36 +121,32 @@ Node<T> full(RNG &rng, int maxHeight,
 
 /**
  * Generates trees using the ramped half and half method.
+ * @param params Genetic Programming parameters.
  * @param rng Random number generator.
- * @param maxHeight The maximum height of the generated tree.
- * @param population Number of individuals to generate. This number will be
- *   increased if it is not even or a multiple of (maxHeight - 1).
- * @param functions Function primitives.
- * @param terminals Terminal primitives.
  */
 template <typename T, class RNG>
-std::vector<Node<T>>
-rampedHalfAndHalf(RNG &rng, int maxHeight, int population,
-                  const std::vector<Primitive<T>> &functions,
-                  const std::vector<Primitive<T>> &terminals) {
-  const int increase = population % (maxHeight - 1);
+std::vector<Node<T>> rampedHalfAndHalf(Params<T, RNG> &params, RNG &rng) {
+  const int increase = params.populationSize % (params.maxHeight - 1);
   if (increase) { // Make the population a multiple of (maxHeight - 1).
     LOG(WARNING) << "rampedHalfAndHalf: population increase - " << increase;
-    population += maxHeight - increase;
+    params.populationSize += params.maxHeight - increase;
   }
-  if ((population / (maxHeight - 1)) % 2) { // Needs to be even.
+  if ((params.populationSize / (params.maxHeight - 1)) % 2) {
+    // Params needs to be even.
     LOG(WARNING) << "rampedHalfAndHalf: population increase to make buckets "
-                 << "even - " << maxHeight - 1;
-    population += maxHeight - 1;
+                 << "even - " << params.maxHeight - 1;
+    params.populationSize += params.maxHeight - 1;
   }
-  LOG(INFO) << "rampedHalfAndHalf: final population size - " << population;
+  LOG(INFO) << "rampedHalfAndHalf: final population size - "
+            << params.populationSize;
 
-  const int halfPopulationPerHeight = population / (maxHeight - 1) / 2;
+  const int halfPopulationPerHeight =
+      params.populationSize / (params.maxHeight - 1) / 2;
   std::vector<Node<T>> nodes;
-  for (int i = 2; i <= maxHeight; ++i) {
+  for (int i = 2; i <= params.maxHeight; ++i) {
     for (int j = 0; j < halfPopulationPerHeight; ++j) {
-      nodes.emplace(grow(rng, i, functions, terminals));
-      nodes.emplace(full(rng, i, functions, terminals));
+      nodes.emplace(grow(rng, i, params.functions, params.terminals));
+      nodes.emplace(full(rng, i, params.functions, params.terminals));
     }
   }
 

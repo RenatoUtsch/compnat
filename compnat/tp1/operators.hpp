@@ -27,17 +27,18 @@
 /**
  * Realizes tournament selection in the population.
  * @param rng Random number generator.
- * @param k Size of the tournament.
+ * @param tournamentSize Size of the tournament.
  * @param fitness Fitness of the individuals of the population
  * @return The index of the individual with the best fitness in the tournament.
  */
 template <typename T, class RNG>
-size_t tournamentSelection(RNG &rng, int k, const std::vector<T> &fitness) {
+size_t tournamentSelection(RNG &rng, size_t tournamentSize,
+                           const std::vector<T> &fitness) {
   const std::uniform_int_distribution<size_t> distr(0, fitness.size() - 1);
   size_t best = distr(rng);
 
   // TODO(renatoutsch): maybe take care to not repeat candidates?
-  for (int i = 1; i < k; ++i) {
+  for (size_t i = 1; i < tournamentSize; ++i) {
     size_t candidate = distr(rng);
     if (fitness[candidate] > fitness[best]) {
       best = candidate;
@@ -66,19 +67,22 @@ std::pair<Node<T>, Node<T>> crossover(RNG &rng, const Node<T> &x, size_t sizeX,
 }
 
 template <typename T, class RNG>
-Node<T> mutation(RNG &rng, int maxHeight, const Node<T> &individual,
-                 size_t size, const std::vector<Primitive<T>> &functions,
-                 const std::vector<Primitive<T>> &terminals) {
+Node<T> mutation(const Params<T, RNG> &params, RNG &rng,
+                 const Node<T> &individual, size_t size) {
   const std::uniform_int_distribution<size_t> distr(0, size - 1);
   const size_t mutationPoint = distr(rng);
 
   auto[mutationNode, childIndex] = findMutationPoint(individual, mutationPoint);
-  mutationNode.setChild(childIndex, grow(rng, maxHeight, functions, terminals));
+  // TODO(renatoutsch): check if params.maxHeight here is appropriate.
+  mutationNode.setChild(childIndex, grow(rng, params.maxHeight,
+                                         params.functions, params.terminals));
 }
 
 /**
  * Generates a new population from an existing one.
+ * @param params Genetic programming params.
  * @param rng The random number generator.
+ * @param maxHeight The maximum height of the trees.
  * @param k The tournament size.
  * @param crossoverProbability Probability of doing a crossover. Must be in the
  *   range [0, 1).
@@ -87,32 +91,34 @@ Node<T> mutation(RNG &rng, int maxHeight, const Node<T> &individual,
  * @param fitness Fitness of the old population, in the same order of elements.
  * @param sizes Size of each individual.
  * @param statistics Statistics of the old population.
+ * @param functions Function operators.
+ * @param terminals Terminal operators.
  */
 template <typename T, class RNG>
 std::vector<Node<T>>
-generateNewPopulation(RNG &rng, int k, double crossoverProbability,
-                      bool elitism, const std::vector<Node<T>> &population,
+generateNewPopulation(const Params<T, RNG> &params, RNG &rng,
+                      const std::vector<Node<T>> &population,
                       const std::vector<T> &fitness,
                       const std::vector<T> &sizes) {
-  CHECK(crossoverProbability >= 0.0 && crossoverProbability < 1.0);
+  CHECK(params.crossoverProb >= 0.0 && params.crossoverProb < 1.0);
 
   std::vector<Node<T>> newPopulation;
-  if (elitism) {
-    /*   newPopulation.push_back(population[statistics.best]); // Make a copy.
-     */
+  if (params.elitism) {
+    /* newPopulation.push_back(population[statistics.best]); // Make a copy. */
   }
 
   std::uniform_real_distribution<> distr(0.0, 1.0);
   while (newPopulation.size() < population.size()) {
-    const auto &p1 = tournamentSelection(rng, k, fitness);
-    const auto &p2 = tournamentSelection(rng, k, fitness);
-    if (distr(rng) <= crossoverProbability) { // Crossover
-      auto[c1, c2] = crossover(rng, p1, p2);
+    const size_t p1 = tournamentSelection(rng, params.tournamentSize, fitness);
+    const size_t p2 = tournamentSelection(rng, params.tournamentSize, fitness);
+    if (distr(rng) <= params.crossoverProb) { // Crossover
+      auto[c1, c2] =
+          crossover(rng, population[p1], sizes[p1], population[p2], sizes[p2]);
       newPopulation.push_back(std::move(c1));
       newPopulation.push_back(std::move(c2));
     } else { // Mutation
-      newPopulation.push_back(mutation(rng, p1));
-      newPopulation.push_back(mutation(rng, p2));
+      newPopulation.push_back(mutation(params, rng, population[p1], sizes[p1]));
+      newPopulation.push_back(mutation(params, rng, population[p2], sizes[p2]));
     }
   }
 
