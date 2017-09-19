@@ -49,8 +49,9 @@ size_t tournamentSelection(RNG &rng, size_t tournamentSize,
 }
 
 template <typename T, class RNG>
-std::pair<Node<T>, Node<T>> crossover(RNG &rng, const Node<T> &x, size_t sizeX,
-                                      const Node<T> &y, size_t sizeY) {
+std::pair<Node<T, RNG>, Node<T, RNG>>
+crossover(RNG &rng, const Node<T, RNG> &x, size_t sizeX, const Node<T, RNG> &y,
+          size_t sizeY) {
   const std::uniform_int_distribution<size_t> distrX(0, sizeX - 1);
   const std::uniform_int_distribution<size_t> distrY(0, sizeY - 1);
   const size_t mutationPointX = distrX(rng);
@@ -59,16 +60,16 @@ std::pair<Node<T>, Node<T>> crossover(RNG &rng, const Node<T> &x, size_t sizeX,
   auto[mutationNodeX, childIndexX] = findMutationPoint(x, mutationPointX);
   auto[mutationNodeY, childIndexY] = findMutationPoint(y, mutationPointY);
 
-  Node<T> childX = x;
-  Node<T> childY = y;
+  Node<T, RNG> childX = x;
+  Node<T, RNG> childY = y;
   std::swap(childX.mutableChild(childIndexX), childY.mutableChild(childIndexY));
 
   return {childX, childY};
 }
 
 template <typename T, class RNG>
-Node<T> mutation(const Params<T, RNG> &params, RNG &rng,
-                 const Node<T> &individual, size_t size) {
+Node<T, RNG> mutation(const Params<T, RNG> &params, RNG &rng,
+                      const Node<T, RNG> &individual, size_t size) {
   const std::uniform_int_distribution<size_t> distr(0, size - 1);
   const size_t mutationPoint = distr(rng);
 
@@ -95,14 +96,14 @@ Node<T> mutation(const Params<T, RNG> &params, RNG &rng,
  * @param terminals Terminal operators.
  */
 template <typename T, class RNG>
-std::vector<Node<T>>
+std::vector<Node<T, RNG>>
 generateNewPopulation(const Params<T, RNG> &params, RNG &rng,
-                      const std::vector<Node<T>> &population,
+                      const std::vector<Node<T, RNG>> &population,
                       const std::vector<T> &fitness,
                       const std::vector<T> &sizes) {
   CHECK(params.crossoverProb >= 0.0 && params.crossoverProb < 1.0);
 
-  std::vector<Node<T>> newPopulation;
+  std::vector<Node<T, RNG>> newPopulation;
   if (params.elitism) {
     /* newPopulation.push_back(population[statistics.best]); // Make a copy. */
   }

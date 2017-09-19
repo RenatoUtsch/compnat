@@ -14,42 +14,21 @@
  * limitations under the License.
  */
 
-#ifndef COMPNAT_TP1_OPERATORS_HPP
-#define COMPNAT_TP1_OPERATORS_HPP
+#ifndef COMPNAT_TP1_PRIMITIVES_HPP
+#define COMPNAT_TP1_PRIMITIVES_HPP
 
-#include <cmath>
-#include <limits>
 #include <random>
 #include <string>
 
 #include "representation.hpp"
+#include "utils.hpp"
 
-/// Safe division, returns default if b is 0.
-template <typename T> T safeDiv(const T &a, const T &b, const T &def = 0) {
-  // Simplification to also support integers. Considers the epsilon as 0.
-  if (std::abs(b) <= std::numeric_limits<T>::epsilon()) {
-    return def;
-  }
-  return a / b;
-}
-
-template <typename T, typename... Args>
-void strCatJoiner_(std::stringstream &ss, const T &t, Args... args) {
-  ss << t;
-  strCatJoiner_(ss, args...);
-}
-
-/// Concatenates the given values into a single string.
-template <typename... Args> std::string strCat(Args... args) {
-  std::stringstream ss;
-  strCatJoiner_(ss, args...);
-  return ss.str();
-}
+namespace primitives {
 
 /// Sum function.
 template <typename T, class RNG>
-inline Primitive<T> sumFn([[maybe_unused]] RNG &rng) {
-  return Primitive<T>(
+Primitive<T, RNG> sumFn([[maybe_unused]] RNG &rng) {
+  return Primitive<T, RNG>(
       2,
       [](const auto &input, const auto &children) {
         return children[0].eval(input) + children[1].eval(input);
@@ -61,8 +40,8 @@ inline Primitive<T> sumFn([[maybe_unused]] RNG &rng) {
 
 /// Subtraction function.
 template <typename T, class RNG>
-inline Primitive<T> subFn([[maybe_unused]] RNG &rng) {
-  return Primitive<T>(
+Primitive<T, RNG> subFn([[maybe_unused]] RNG &rng) {
+  return Primitive<T, RNG>(
       2,
       [](const auto &input, const auto &children) {
         return children[0].eval(input) - children[1].eval(input);
@@ -74,8 +53,8 @@ inline Primitive<T> subFn([[maybe_unused]] RNG &rng) {
 
 /// Multiplication function.
 template <typename T, class RNG>
-inline Primitive<T> multFn([[maybe_unused]] RNG &rng) {
-  return Primitive<T>(
+Primitive<T, RNG> multFn([[maybe_unused]] RNG &rng) {
+  return Primitive<T, RNG>(
       2,
       [](const auto &input, const auto &children) {
         return children[0].eval(input) * children[1].eval(input);
@@ -87,8 +66,8 @@ inline Primitive<T> multFn([[maybe_unused]] RNG &rng) {
 
 /// Division function. Returns 0 if division is by 0.
 template <typename T, class RNG>
-inline Primitive<T> divFn([[maybe_unused]] RNG &rng) {
-  return Primitive<T>(
+Primitive<T, RNG> divFn([[maybe_unused]] RNG &rng) {
+  return Primitive<T, RNG>(
       2,
       [](const auto &input, const auto &children) {
         const T &secondResult = children[1].eval(input);
@@ -101,22 +80,22 @@ inline Primitive<T> divFn([[maybe_unused]] RNG &rng) {
 
 /// Logarithm function.
 template <typename T, class RNG>
-inline Primitive<T> logFn([[maybe_unused]] RNG &rng) {
-  return Primitive<T>(1,
-                      [](const auto &input, const auto &children) {
-                        return std::log(children[0].eval(input));
-                      },
-                      [](const auto &children) {
-                        return strCat("log(", children[0].str(), ')');
-                      });
+Primitive<T, RNG> logFn([[maybe_unused]] RNG &rng) {
+  return Primitive<T, RNG>(1,
+                           [](const auto &input, const auto &children) {
+                             return std::log(children[0].eval(input));
+                           },
+                           [](const auto &children) {
+                             return strCat("log(", children[0].str(), ')');
+                           });
 }
 
 /// Constant terminal. Returns a random value between 0 and 1.
-template <typename T, class RNG> inline Primitive<T> constTerm(RNG &rng) {
+template <typename T, class RNG> Primitive<T, RNG> constTerm(RNG &rng) {
   std::uniform_real_distribution<T> distr(-1, 1);
   const T value = distr(rng);
 
-  return Primitive<T>(
+  return Primitive<T, RNG>(
       0,
       [value]([[maybe_unused]] const auto &input,
               [[maybe_unused]] const auto &children) { return value; },
@@ -126,9 +105,10 @@ template <typename T, class RNG> inline Primitive<T> constTerm(RNG &rng) {
 }
 
 /// Variable terminal. Returns the value of the given variable.
-template <typename T> inline Primitive<T> makeVarTerm(const std::string &var) {
+template <typename T, class RNG>
+Primitive<T, RNG> makeVarTerm(const std::string &var) {
   return [&var]([[maybe_unused]] auto &rng) {
-    return Primitive<T>(
+    return Primitive<T, RNG>(
         0,
         [&var](const auto &input, [[maybe_unused]] const auto &children) {
           return input[var];
@@ -137,4 +117,6 @@ template <typename T> inline Primitive<T> makeVarTerm(const std::string &var) {
   };
 }
 
-#endif // !COMPNAT_TP1_OPERATORS_HPP
+} // namespace primitives
+
+#endif // !COMPNAT_TP1_PRIMITIVES_HPP

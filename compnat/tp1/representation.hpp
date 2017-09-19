@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef COMPNAT_TP1_REPRESENTATION_H
-#define COMPNAT_TP1_REPRESENTATION_H
+#ifndef COMPNAT_TP1_REPRESENTATION_HPP
+#define COMPNAT_TP1_REPRESENTATION_HPP
 
 #include <functional>
 #include <random>
@@ -25,8 +25,6 @@
 
 #include <glog/logging.h>
 
-template <typename T> class Node;
-
 /**
  * Input for evaluation of a node.
  * It's a simple map from each input variable to it's value.
@@ -34,50 +32,60 @@ template <typename T> class Node;
 template <typename T> using EvalInput = std::unordered_map<std::string, T>;
 
 /// Vector representing children.
-template <typename T> using Children = std::vector<Node<T>>;
+template <typename T, class RNG> using Children = std::vector<Node<T, RNG>>;
 
 /// Function that evaluates an operator.
-template <typename T>
-using EvalFn = std::function<T(const EvalInput<T> &input, const Children<T> &)>;
+template <typename T, class RNG>
+using EvalFn =
+    std::function<T(const EvalInput<T> &input, const Children<T, RNG> &)>;
 
 /// Function that converts an operator to string.
-template <typename T>
-using StrFn = std::function<std::string(const Children<T> &)>;
+template <typename T, class RNG>
+using StrFn = std::function<std::string(const Children<T, RNG> &)>;
+
+/// Pair mapping inputs to output.
+template <typename T> using Sample = std::pair<EvalInput<T>, T>;
+
+/// Dataset of samples.
+template <typename T> using Dataset = std::vector<Sample<T>>;
 
 /// Represents an primitive.
-template <typename T> struct Primitive {
+template <typename T, class RNG> struct Primitive {
   int numRequiredChildren;
-  EvalFn<T> evalFn;
-  StrFn<T> strFn;
+  EvalFn<T, RNG> evalFn;
+  StrFn<T, RNG> strFn;
 
   operator bool() const { return evalFn && strFn; }
 
   Primitive() {}
 
-  Primitive(int numRequiredChildren, EvalFn<T> evalFn, StrFn<T> strFn)
+  Primitive(int numRequiredChildren, EvalFn<T, RNG> evalFn, StrFn<T, RNG> strFn)
       : numRequiredChildren(numRequiredChildren), evalFn(evalFn), strFn(strFn) {
   }
 };
 
 /// Function that creates a new primitive.
 template <typename T, class RNG>
-using PrimitiveFn = std::function<Primitive<T>(RNG &rng)>;
+using PrimitiveFn = std::function<Primitive<T, RNG>(RNG &rng)>;
 
 /**
  * Represents the parameters used in the program.
  */
-template <typename T, class RNG> struct Params {
+template <typename T = double, class RNG = std::mt19937> struct Params {
   /// RNG seed.
   unsigned seed;
 
+  /// Number of generations to run.
+  int numGenerations;
+
   /// Population size.
-  size_t populationSize;
+  int populationSize;
 
   /// Tournament size.
-  size_t tournamentSize;
+  int tournamentSize;
 
   /// Maximum tree height.
-  size_t maxHeight;
+  int maxHeight;
 
   /// Crossover probability.
   double crossoverProb;
@@ -91,16 +99,17 @@ template <typename T, class RNG> struct Params {
   /// Available terminal primitives.
   std::vector<PrimitiveFn<T, RNG>> terminals;
 
-  Params(unsigned seed, size_t populationSize, size_t tournamentSize,
-         size_t maxHeight, double crossoverProb, bool elitism,
-         const std::vector<PrimitiveFn<T, RNG>> functions,
-         const std::vector<PrimitiveFn<T, RNG>> terminals)
-      : seed(seed), populationSize(populationSize),
-        tournamentSize(tournamentSize), maxHeight(maxHeight),
-        crossoverProb(crossoverProb), elitism(elitism), functions(functions),
-        terminals(terminals) {
+  Params(unsigned seed, int numGenerations, int populationSize,
+         int tournamentSize, int maxHeight, double crossoverProb, bool elitism,
+         const std::vector<PrimitiveFn<T, RNG>> &functions,
+         const std::vector<PrimitiveFn<T, RNG>> &terminals)
+      : seed(seed), numGenerations(numGenerations),
+        populationSize(populationSize), tournamentSize(tournamentSize),
+        maxHeight(maxHeight), crossoverProb(crossoverProb), elitism(elitism),
+        functions(functions), terminals(terminals) {
     LOG(INFO) << "Params:";
     LOG(INFO) << "seed: " << seed;
+    LOG(INFO) << "numGenerations: " << numGenerations;
     LOG(INFO) << "populationSize: " << populationSize;
     LOG(INFO) << "tournamentSize: " << tournamentSize;
     LOG(INFO) << "maxHeight: " << maxHeight;
@@ -114,13 +123,13 @@ template <typename T, class RNG> struct Params {
  * A node is represented by it's current children and it's Primitive, which
  * represents what it does and the required number of children.
  */
-template <typename T> class Node {
+template <typename T, class RNG> class Node {
 
 public:
   /**
    * Creates a tree node from the given primitive.
    */
-  Node(const Primitive<T> &op = Primitive<T>()) : op_(op) {
+  Node(const Primitive<T, RNG> &op = Primitive<T, RNG>()) : op_(op) {
     if (op_) {
       children_.resize(op.numRequiredChildren);
     }
@@ -135,13 +144,15 @@ public:
   std::string str() const { return op_.strFn(children_); }
 
   /// Replaces a given child.
-  void setChild(int i, const Node<T> &&newChild) { children_[i] = newChild; }
+  void setChild(int i, const Node<T, RNG> &&newChild) {
+    children_[i] = newChild;
+  }
 
   /// Returns the child at index i.
-  const Node<T> &child(int i) const { return children_[i]; }
+  const Node<T, RNG> &child(int i) const { return children_[i]; }
 
   /// Returns the mutable child at index i.
-  Node<T> &mutableChild(int i) { return children_[i]; }
+  Node<T, RNG> &mutableChild(int i) { return children_[i]; }
 
   /// Number of children the node currently has.
   size_t numChildren() const { return children_.size(); }
@@ -162,8 +173,8 @@ public:
   }
 
 private:
-  Primitive<T> op_;
-  Children<T> children_;
+  Primitive<T, RNG> op_;
+  Children<T, RNG> children_;
 };
 
-#endif // !COMPNAT_TP1_REPRESENTATION_H
+#endif // !COMPNAT_TP1_REPRESENTATION_HPP
