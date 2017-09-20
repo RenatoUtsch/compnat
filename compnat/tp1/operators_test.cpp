@@ -89,10 +89,6 @@ TEST(MutationTest, WorksCorrectly) {
   EXPECT_EQ("(x0 + ((x0 - x1) + (x0 / x0)))", child.str());
 }
 
-TEST(GenerateNewPopulationTest, WorksCorrectly) {
-  RNG rng(0);
-  const size_t selected = tournamentSelection<T>(rng, 9, {1, 5, 4});
-  EXPECT_EQ((size_t)1, selected);
-}
+TEST(GenerateNewPopulationTest, WorksCorrectly) { EXPECT_EQ(false, true); }
 
 } // namespace
