@@ -25,6 +25,8 @@
 
 #include "representation.hpp"
 
+namespace generators {
+
 /// Returns a random primitive.
 template <typename T, class RNG>
 const Primitive<T, RNG> &
@@ -68,19 +70,19 @@ Node<T, RNG> grow(RNG &rng, int maxHeight,
   nodes.emplace(&root, 1);
   while (!nodes.empty()) {
     auto[node, height] = nodes.pop();
-    if (node.isTerminal()) {
+    if (node->isTerminal()) {
       continue;
     } else if (height >= maxHeight - 1) {
-      for (int i = 0; i < node.numChildren(); ++i) {
-        node.setChild(i, Node<T, RNG>(randomPrimitive(rng, terminals)));
+      for (int i = 0; i < node->numChildren(); ++i) {
+        node->setChild(i, Node<T, RNG>(randomPrimitive(rng, terminals)));
       }
       continue;
     }
 
-    for (int i = 0; i < node.numChildren(); ++i) {
-      node.setChild(i,
-                    Node<T, RNG>(randomPrimitive(rng, functions, terminals)));
-      nodes.emplace(&node.child(i), height + 1);
+    for (int i = 0; i < node->numChildren(); ++i) {
+      node->setChild(i,
+                     Node<T, RNG>(randomPrimitive(rng, functions, terminals)));
+      nodes.emplace(&node->child(i), height + 1);
     }
   }
 
@@ -105,15 +107,15 @@ Node<T, RNG> full(RNG &rng, int maxHeight,
   while (!nodes.empty()) {
     auto[node, height] = nodes.pop();
     if (height >= maxHeight - 1) {
-      for (int i = 0; i < node.numChildren(); ++i) {
-        node.setChild(i, Node<T, RNG>(randomPrimitive(rng, terminals)));
+      for (int i = 0; i < node->numChildren(); ++i) {
+        node->setChild(i, Node<T, RNG>(randomPrimitive(rng, terminals)));
       }
       continue;
     }
 
-    for (int i = 0; i < node.numChildren(); ++i) {
-      node.setChild(i, Node<T, RNG>(randomPrimitive(rng, functions)));
-      nodes.emplace(&node.child(i), height + 1);
+    for (int i = 0; i < node->numChildren(); ++i) {
+      node->setChild(i, Node<T, RNG>(randomPrimitive(rng, functions)));
+      nodes->emplace(&node->child(i), height + 1);
     }
   }
 
@@ -153,5 +155,7 @@ std::vector<Node<T, RNG>> rampedHalfAndHalf(Params<T, RNG> &params, RNG &rng) {
 
   return nodes;
 }
+
+} // namespace generators
 
 #endif // !COMPNAT_TP1_GENERATORS_HPP

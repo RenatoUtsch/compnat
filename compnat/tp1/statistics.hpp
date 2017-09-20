@@ -17,6 +17,8 @@
 #ifndef COMPNAT_TP1_STATISTICS_HPP
 #define COMPNAT_TP1_STATISTICS_HPP
 
+#include <cmath>
+
 #include "representation.hpp"
 
 namespace stats {
@@ -32,7 +34,7 @@ T fitness(const Node<T, RNG> &individual, const Dataset<T> &dataset) {
     error += std::pow(individual.eval(input) - expected, 2);
   }
 
-  return std::sqrt(error / data.size());
+  return std::sqrt(error / dataset.size());
 }
 
 /**
@@ -68,14 +70,15 @@ std::vector<size_t> sizes(const std::vector<Node<T, RNG>> &population) {
 /**
  * Converts all the population to string version.
  */
+template <typename T, class RNG>
 std::vector<std::string> strs(const std::vector<Node<T, RNG>> &population) {
   // TODO(renatoutsch): implement this in parallel.
-  std::vector<T> strs(population.size());
+  std::vector<T> texts(population.size());
   for (size_t i = 0; i < population.size(); ++i) {
-    strs[i] = population[i].str();
+    texts[i] = population[i].str();
   }
 
-  return strs;
+  return texts;
 }
 
 } // namespace stats

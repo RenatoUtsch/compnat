@@ -26,20 +26,10 @@
 #include "representation.hpp"
 #include "utils.hpp"
 
-// https://stackoverflow.com/a/7408245/1099010 with string_view
-/* std::vector<std::string_view> split(const std::string &text, char sep) { */
-/*   std::vector<std::string_view> tokens; */
-/*   std::size_t start = 0, end = 0; */
-/*   while ((end = text.find(sep, start)) != std::string::npos) { */
-/*     tokens.push_back(std::string_view(text[start], end - start)); */
-/*     start = end + 1; */
-/*   } */
-/*   tokens.push_back(std::string_view(text[start], text.size() - start)); */
-/*   return tokens; */
-/* } */
+namespace parser {
 
 // https://stackoverflow.com/a/7408245/1099010
-std::vector<std::string> split(const std::string &text, char sep) {
+std::vector<std::string> splitLine(const std::string &text, char sep) {
   std::vector<std::string> tokens;
   std::size_t start = 0, end = 0;
   while ((end = text.find(sep, start)) != std::string::npos) {
@@ -53,8 +43,7 @@ std::vector<std::string> split(const std::string &text, char sep) {
 /**
  * Loads a dataset from a CSV file.
  */
-template <typename T = double>
-Dataset<T> loadDataset(const std::string &filename) {
+template <typename T> Dataset<T> loadDataset(const std::string &filename) {
   Dataset<T> dataset;
 
   std::ifstream in(filename);
@@ -62,18 +51,22 @@ Dataset<T> loadDataset(const std::string &filename) {
 
   std::string line;
   while (std::getline(in, line)) {
-    const auto &tokens = split(line, ',');
+    const auto &tokens = splitLine(line, ',');
     const size_t numInputs = tokens.size() - 1;
 
     EvalInput<T> input;
     for (size_t i = 0; i < numInputs; ++i) {
-      input[strCat('x', i)] = stod(tokens[i]);
+      utils::strSplit(tokens[i], input[utils::strCat('x', i)]);
     }
 
-    dataset.push_back({input, stod(tokens[tokens.size() - 1])});
+    T expectedValue;
+    utils::strSplit(tokens[tokens.size() - 1], expectedValue);
+    dataset.push_back({input, expectedValue});
   }
 
   return dataset;
 }
+
+} // namespace parser
 
 #endif // !COMPNAT_TP1_PARSER_HPP

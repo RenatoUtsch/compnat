@@ -16,6 +16,68 @@ load("//compnat:defs.bzl", "COMPNAT_CPP_COPTS")
 
 package(default_visibility = ["//visibility:private"])
 
+cc_binary(
+    name = "tp1",
+    srcs = ["tp1.cpp"],
+    copts = COMPNAT_CPP_COPTS,
+    deps = [
+        ":parser",
+        ":primitives",
+        ":representation",
+    ],
+)
+
+cc_library(
+    name = "generators",
+    hdrs = ["generators.hpp"],
+    copts = COMPNAT_CPP_COPTS,
+    deps = [
+        ":representation",
+    ],
+)
+
+cc_library(
+    name = "operators",
+    hdrs = ["operators.hpp"],
+    copts = COMPNAT_CPP_COPTS,
+    deps = [
+        ":generators",
+        ":representation",
+    ],
+)
+
+cc_library(
+    name = "parser",
+    hdrs = ["parser.hpp"],
+    copts = COMPNAT_CPP_COPTS,
+    deps = [
+        ":representation",
+        ":utils",
+    ],
+)
+
+cc_test(
+    name = "parser_test",
+    size = "small",
+    srcs = ["parser_test.cpp"],
+    copts = COMPNAT_CPP_COPTS,
+    data = ["//compnat/tp1/datasets:unit_test"],
+    deps = [
+        ":parser",
+        "//third_party:gmock",
+        "//third_party:gtest",
+    ],
+)
+
+cc_library(
+    name = "primitives",
+    hdrs = ["primitives.hpp"],
+    copts = COMPNAT_CPP_COPTS,
+    deps = [
+        ":utils",
+    ],
+)
+
 cc_library(
     name = "representation",
     hdrs = ["representation.hpp"],
@@ -30,8 +92,47 @@ cc_test(
     name = "representation_test",
     size = "small",
     srcs = ["representation_test.cpp"],
+    copts = COMPNAT_CPP_COPTS,
+    deps = [
+        ":primitives",
+        ":representation",
+        "//third_party:gtest",
+    ],
+)
+
+cc_library(
+    name = "simulation",
+    hdrs = ["simulation.hpp"],
+    copts = COMPNAT_CPP_COPTS,
+    deps = [
+        ":generators",
+        ":representation",
+        ":statistics",
+    ],
+)
+
+cc_library(
+    name = "statistics",
+    hdrs = ["statistics.hpp"],
+    copts = COMPNAT_CPP_COPTS,
     deps = [
         ":representation",
+    ],
+)
+
+cc_library(
+    name = "utils",
+    hdrs = ["utils.hpp"],
+    copts = COMPNAT_CPP_COPTS,
+)
+
+cc_test(
+    name = "utils_test",
+    size = "small",
+    srcs = ["utils_test.cpp"],
+    copts = COMPNAT_CPP_COPTS,
+    deps = [
+        ":utils",
         "//third_party:gtest",
     ],
 )

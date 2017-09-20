@@ -14,27 +14,39 @@
  * limitations under the License.
  */
 
-#include "primitives.hpp"
-#include "representation.hpp"
-
-#include <random>
+#include "utils.hpp"
 
 #include <gtest/gtest.h>
 
 namespace {
+using utils::safeDiv;
+using utils::strCat;
+using utils::strSplit;
 
-TEST(NodeTest, AcceptsValidPrimitiveAndGivesCorrectResults) {
-  std::mt19937 rng(0);
-  Node<double, std::mt19937> node(primitives::sumFn<double>(rng));
-  EXPECT_EQ((size_t)2, node.numChildren());
+TEST(SafeDivTest, NormalDivision) {
+  EXPECT_EQ(2, safeDiv(5, 2));
+  EXPECT_FLOAT_EQ(2.5, safeDiv(5.0, 2.0));
+}
 
-  node.setChild(0, primitives::makeVarTerm<double, decltype(rng)>("x0")(rng));
-  node.setChild(1, primitives::constTerm<double>(rng));
-  EXPECT_EQ("(x0 + 0.185689)", node.str());
-  EXPECT_FLOAT_EQ(42.185689, node.eval({{"x0", 42}}));
-  EXPECT_FALSE(node.isTerminal());
-  EXPECT_TRUE(node.child(0).isTerminal());
-  EXPECT_TRUE(node.child(1).isTerminal());
+TEST(SafeDivTest, ByZeroDivision) {
+  EXPECT_EQ(0, safeDiv(-2, 0));
+  EXPECT_FLOAT_EQ(0.0, safeDiv(7.0, 0.0));
+}
+
+TEST(StrCatTest, WorksCorrectly) {
+  EXPECT_EQ("abc123D3.14", strCat("abc", 123, 'D', 3.14));
+}
+
+TEST(StrSplitTest, WorksCorrectly) {
+  std::string s;
+  double d = 0;
+  char c = 0;
+  int i = 0;
+  strSplit("food 3.14 a 42", s, d, c, i);
+  EXPECT_EQ("food", s);
+  EXPECT_DOUBLE_EQ(3.14, d);
+  EXPECT_EQ('a', c);
+  EXPECT_EQ(42, i);
 }
 
 } // namespace

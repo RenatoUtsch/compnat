@@ -34,6 +34,9 @@ DEFINE_double(crossover_prob, 0.9,
 DEFINE_bool(elitism, false, "Whether to use elitism or not.");
 
 int main(int argc, char **argv) {
+  using T = double;
+  using RNG = std::mt19937;
+
   gflags::ParseCommandLineFlags(&argc, &argv, true);
   google::InitGoogleLogging(argv[0]);
   google::InstallFailureSignalHandler();
@@ -43,17 +46,19 @@ int main(int argc, char **argv) {
     FLAGS_seed = rd();
   }
 
-  const auto &dataset = loadDataset(FLAGS_dataset);
+  const auto &dataset = parser::loadDataset<T>(FLAGS_dataset);
 
-  /* std::vector<PrimitiveFn<double, std::mt19937>> functions = { */
-  /*     primitives::sumFn, primitives::subFn, primitives::multFn, */
-  /*     primitives::divFn, primitives::logFn, */
-  /* }; */
+  const std::vector<PrimitiveFn<T, RNG>> functions = {
+      primitives::sumFn<T, RNG>,  primitives::subFn<T, RNG>,
+      primitives::multFn<T, RNG>, primitives::divFn<T, RNG>,
+      primitives::logFn<T, RNG>,
+  };
 
-  std::vector<PrimitiveFn<double, std::mt19937>> terminals;
-  terminals.push_back(primitives::constTerm<double, std::mt19937>);
-  for (const auto & [ key, _ ] : dataset) {
-    terminals.push_back(primitives::makeVarTerm(key));
+  std::vector<PrimitiveFn<T, RNG>> terminals;
+  terminals.push_back(primitives::constTerm<T, RNG>);
+  const auto &datasetSample = dataset[0].first;
+  for (const auto & [ key, _ ] : datasetSample) {
+    terminals.push_back(primitives::makeVarTerm<T, RNG>(key));
   }
 
   Params<> params(FLAGS_seed, FLAGS_num_generations, FLAGS_population_size,

@@ -24,6 +24,8 @@
 #include "generators.hpp"
 #include "representation.hpp"
 
+namespace operators {
+
 /**
  * Realizes tournament selection in the population.
  * @param rng Random number generator.
@@ -75,7 +77,8 @@ Node<T, RNG> mutation(const Params<T, RNG> &params, RNG &rng,
 
   auto[mutationNode, childIndex] = findMutationPoint(individual, mutationPoint);
   // TODO(renatoutsch): check if params.maxHeight here is appropriate.
-  mutationNode.setChild(childIndex, grow(rng, params.maxHeight,
+  mutationNode.setChild(childIndex,
+                        generators::grow(rng, params.maxHeight,
                                          params.functions, params.terminals));
 }
 
@@ -131,5 +134,7 @@ generateNewPopulation(const Params<T, RNG> &params, RNG &rng,
   }
   return newPopulation;
 }
+
+} // namespace operators
 
 #endif // !COMPNAT_TP1_OPERATORS_HPP

@@ -22,6 +22,8 @@
 #include <sstream>
 #include <string>
 
+namespace utils {
+
 /// Safe division, returns default if b is 0.
 template <typename T> T safeDiv(const T &a, const T &b, const T &def = 0) {
   // Simplification to also support integers. Considers the epsilon as 0.
@@ -31,21 +33,39 @@ template <typename T> T safeDiv(const T &a, const T &b, const T &def = 0) {
   return a / b;
 }
 
-template <typename T> void strCatJoiner_(std::stringstream &ss, const T &t) {
+template <typename T> void strCatter_(std::stringstream &ss, const T &t) {
   ss << t;
 }
 
 template <typename T, typename... Args>
-void strCatJoiner_(std::stringstream &ss, const T &t, Args... args) {
+void strCatter_(std::stringstream &ss, const T &t, const Args &... args) {
   ss << t;
-  strCatJoiner_(ss, args...);
+  strCatter_(ss, args...);
 }
 
 /// Concatenates the given values into a single string.
-template <typename... Args> std::string strCat(Args... args) {
+template <typename... Args> std::string strCat(const Args &... args) {
   std::stringstream ss;
-  strCatJoiner_(ss, args...);
+  strCatter_(ss, args...);
   return ss.str();
 }
+
+template <typename T> void strSplitter_(std::istringstream &iss, T &t) {
+  iss >> t;
+}
+
+template <typename T, typename... Args>
+void strSplitter_(std::istringstream &iss, T &t, Args &... args) {
+  iss >> t;
+  strSplitter_(iss, args...);
+}
+
+/// Extracts the given string into the given values.
+template <typename... Args>
+void strSplit(const std::string &str, Args &... args) {
+  std::istringstream iss(str);
+  strSplitter_(iss, args...);
+}
+} // namespace utils
 
 #endif // !COMPNAT_TP1_UTILS_HPP

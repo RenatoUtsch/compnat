@@ -21,9 +21,11 @@
 #include "representation.hpp"
 #include "statistics.hpp"
 
+namespace simulation {
+
 template <typename T, class RNG>
-void simulation(const Params<T, RNG> &params, const Dataset<T> &trainDataset,
-                const Dataset<T> &testDataset) {
+void simulate(const Params<T, RNG> &params, const Dataset<T> &trainDataset,
+              [[maybe_unused]] const Dataset<T> &testDataset) { // TODO: for now
   RNG rng(params.seed);
 
   const auto &population = rampedHalfAndHalf(params, rng);
@@ -31,5 +33,7 @@ void simulation(const Params<T, RNG> &params, const Dataset<T> &trainDataset,
   const auto &sizes = stats::sizes(population);
   const auto &strs = stats::strs(population);
 }
+
+} // namespace simulation
 
 #endif // !COMPNAT_TP1_SIMULATION_HPP
