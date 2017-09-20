@@ -18,5 +18,5 @@ COMPNAT_CPP_COPTS = [
     "-Wextra",
     "-Werror",
     "-pedantic",
-    "-std=c++17",
+    "-std=c++1z",
 ]
