@@ -18,6 +18,7 @@
 #define COMPNAT_TP1_OPERATORS_HPP
 
 #include <random>
+#include <stack>
 #include <utility>
 #include <vector>
 
@@ -27,7 +28,48 @@
 namespace operators {
 
 /**
+ * Pushes children into a stack.
+ */
+template <typename T, class RNG>
+void pushChildren_(std::stack<std::pair<Node<T, RNG> *, size_t>> &s,
+                   Node<T, RNG> *node) {
+  for (size_t i = 0; i < node->numChildren(); ++i) {
+    s.push({node, i});
+  }
+}
+
+/**
+ * Uses a traversal to select a random tree point, except for the root.
+ * @param rng Random number generator.
+ * @param root Tree to select a node.
+ * @param size Size of the tree.
+ * @return Mutable reference to the parent's node and index into the child's
+ * list to the selected point.
+ */
+template <typename T, class RNG>
+std::pair<Node<T, RNG> *, size_t> randomTreePoint(RNG &rng, Node<T, RNG> &root,
+                                                  size_t size) {
+  // Start from 1 to not select the root.
+  std::uniform_int_distribution<size_t> distr(1, size - 1);
+  const size_t selectedPoint = distr(rng);
+
+  std::stack<std::pair<Node<T, RNG> *, size_t>> s;
+  pushChildren_(s, &root);
+  for (size_t current = 1;; ++current) {
+    auto[parent, childIndex] = s.top();
+    s.pop();
+
+    if (current == selectedPoint) {
+      return {parent, childIndex};
+    }
+
+    pushChildren_(s, &parent->mutableChild(childIndex));
+  }
+}
+
+/**
  * Realizes tournament selection in the population.
+ * Candidates may repeat when doing the tournament, but that's not a problem.
  * @param rng Random number generator.
  * @param tournamentSize Size of the tournament.
  * @param fitness Fitness of the individuals of the population
@@ -36,10 +78,9 @@ namespace operators {
 template <typename T, class RNG>
 size_t tournamentSelection(RNG &rng, size_t tournamentSize,
                            const std::vector<T> &fitness) {
-  const std::uniform_int_distribution<size_t> distr(0, fitness.size() - 1);
+  std::uniform_int_distribution<size_t> distr(0, fitness.size() - 1);
   size_t best = distr(rng);
 
-  // TODO(renatoutsch): maybe take care to not repeat candidates?
   for (size_t i = 1; i < tournamentSize; ++i) {
     size_t candidate = distr(rng);
     if (fitness[candidate] > fitness[best]) {
@@ -54,53 +95,38 @@ template <typename T, class RNG>
 std::pair<Node<T, RNG>, Node<T, RNG>>
 crossover(RNG &rng, const Node<T, RNG> &x, size_t sizeX, const Node<T, RNG> &y,
           size_t sizeY) {
-  const std::uniform_int_distribution<size_t> distrX(0, sizeX - 1);
-  const std::uniform_int_distribution<size_t> distrY(0, sizeY - 1);
-  const size_t mutationPointX = distrX(rng);
-  const size_t mutationPointY = distrY(rng);
-
-  auto[mutationNodeX, childIndexX] = findMutationPoint(x, mutationPointX);
-  auto[mutationNodeY, childIndexY] = findMutationPoint(y, mutationPointY);
-
   Node<T, RNG> childX = x;
   Node<T, RNG> childY = y;
-  std::swap(childX.mutableChild(childIndexX), childY.mutableChild(childIndexY));
+  auto[crossPointX, childIndexX] = randomTreePoint(rng, childX, sizeX);
+  auto[crossPointY, childIndexY] = randomTreePoint(rng, childY, sizeY);
+  std::swap(crossPointX->mutableChild(childIndexX),
+            crossPointY->mutableChild(childIndexY));
 
   return {childX, childY};
 }
 
 template <typename T, class RNG>
-Node<T, RNG> mutation(const Params<T, RNG> &params, RNG &rng,
+Node<T, RNG> mutation(RNG &rng, const Params<T, RNG> &params,
                       const Node<T, RNG> &individual, size_t size) {
-  const std::uniform_int_distribution<size_t> distr(0, size - 1);
-  const size_t mutationPoint = distr(rng);
+  Node<T, RNG> child = individual;
+  auto[mutationPoint, childIndex] = randomTreePoint(rng, child, size);
 
-  auto[mutationNode, childIndex] = findMutationPoint(individual, mutationPoint);
   // TODO(renatoutsch): check if params.maxHeight here is appropriate.
-  mutationNode.setChild(childIndex,
-                        generators::grow(rng, params.maxHeight,
-                                         params.functions, params.terminals));
+  mutationPoint->setChild(childIndex,
+                          generators::grow(rng, params.maxHeight,
+                                           params.functions, params.terminals));
+  return child;
 }
 
 /**
  * Generates a new population from an existing one.
+ * @param
  * @param params Genetic programming params.
- * @param rng The random number generator.
- * @param maxHeight The maximum height of the trees.
- * @param k The tournament size.
- * @param crossoverProbability Probability of doing a crossover. Must be in the
- *   range [0, 1).
- * @param elitism If should use elitism or not.
- * @param population Old population.
- * @param fitness Fitness of the old population, in the same order of elements.
- * @param sizes Size of each individual.
  * @param statistics Statistics of the old population.
- * @param functions Function operators.
- * @param terminals Terminal operators.
  */
 template <typename T, class RNG>
 std::vector<Node<T, RNG>>
-generateNewPopulation(const Params<T, RNG> &params, RNG &rng,
+generateNewPopulation(RNG &rng, const Params<T, RNG> &params,
                       const std::vector<Node<T, RNG>> &population,
                       const std::vector<T> &fitness,
                       const std::vector<T> &sizes) {
@@ -121,8 +147,8 @@ generateNewPopulation(const Params<T, RNG> &params, RNG &rng,
       newPopulation.push_back(std::move(c1));
       newPopulation.push_back(std::move(c2));
     } else { // Mutation
-      newPopulation.push_back(mutation(params, rng, population[p1], sizes[p1]));
-      newPopulation.push_back(mutation(params, rng, population[p2], sizes[p2]));
+      newPopulation.push_back(mutation(rng, params, population[p1], sizes[p1]));
+      newPopulation.push_back(mutation(rng, params, population[p2], sizes[p2]));
     }
   }
 

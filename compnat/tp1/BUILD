@@ -36,6 +36,19 @@ cc_library(
     ],
 )
 
+cc_test(
+    name = "generators_test",
+    size = "small",
+    srcs = ["generators_test.cpp"],
+    copts = COMPNAT_CPP_COPTS,
+    deps = [
+        ":generators",
+        ":primitives",
+        ":utils",
+        "//third_party:gtest",
+    ],
+)
+
 cc_library(
     name = "operators",
     hdrs = ["operators.hpp"],
@@ -43,6 +56,20 @@ cc_library(
     deps = [
         ":generators",
         ":representation",
+    ],
+)
+
+cc_test(
+    name = "operators_test",
+    size = "small",
+    srcs = ["operators_test.cpp"],
+    copts = COMPNAT_CPP_COPTS,
+    deps = [
+        ":generators",
+        ":operators",
+        ":primitives",
+        ":statistics",
+        "//third_party:gtest",
     ],
 )
 
@@ -75,6 +102,18 @@ cc_library(
     copts = COMPNAT_CPP_COPTS,
     deps = [
         ":utils",
+    ],
+)
+
+cc_test(
+    name = "primitives_test",
+    size = "small",
+    srcs = ["primitives_test.cpp"],
+    copts = COMPNAT_CPP_COPTS,
+    deps = [
+        ":primitives",
+        ":representation",
+        "//third_party:gtest",
     ],
 )
 
@@ -117,6 +156,20 @@ cc_library(
     copts = COMPNAT_CPP_COPTS,
     deps = [
         ":representation",
+    ],
+)
+
+cc_test(
+    name = "statistics_test",
+    size = "small",
+    srcs = ["statistics_test.cpp"],
+    copts = COMPNAT_CPP_COPTS,
+    deps = [
+        ":primitives",
+        ":representation",
+        ":statistics",
+        "//third_party:gmock",
+        "//third_party:gtest",
     ],
 )
 

@@ -87,10 +87,10 @@ Primitive<T, RNG> logFn([[maybe_unused]] RNG &rng) {
   return Primitive<T, RNG>( // Keep formatting
       1,
       [](const auto &input, const auto &children) {
-        return std::log(children[0].eval(input));
+        return std::log2(children[0].eval(input));
       },
       [](const auto &children) {
-        return utils::strCat("log(", children[0].str(), ')');
+        return utils::strCat("log2(", children[0].str(), ')');
       });
 }
 
@@ -111,13 +111,13 @@ template <typename T, class RNG> Primitive<T, RNG> constTerm(RNG &rng) {
 /// Variable terminal. Returns the value of the given variable.
 template <typename T, class RNG>
 std::function<Primitive<T, RNG>(RNG &rng)> makeVarTerm(const std::string &var) {
-  return [&var]([[maybe_unused]] auto &rng) {
+  return [var]([[maybe_unused]] auto &rng) {
     return Primitive<T, RNG>( // Keep formatting
         0,
-        [&var](const auto &input, [[maybe_unused]] const auto &children) {
+        [var](const auto &input, [[maybe_unused]] const auto &children) {
           return input.at(var);
         },
-        [&var]([[maybe_unused]] const auto &children) { return var; });
+        [var]([[maybe_unused]] const auto &children) { return var; });
   };
 }
 

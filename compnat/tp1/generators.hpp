@@ -29,27 +29,28 @@ namespace generators {
 
 /// Returns a random primitive.
 template <typename T, class RNG>
-const Primitive<T, RNG> &
-randomPrimitive(RNG &rng, const std::vector<Primitive<T, RNG>> &primitives) {
-  const std::uniform_int_distribution<size_t> distr(0, primitives.size() - 1);
-  const auto primitive = distr(rng);
+Primitive<T, RNG>
+randomPrimitive(RNG &rng,
+                const std::vector<PrimitiveFn<T, RNG>> &primitiveFns) {
+  std::uniform_int_distribution<size_t> distr(0, primitiveFns.size() - 1);
+  const auto primitiveFn = distr(rng);
 
-  return primitives[primitive];
+  return primitiveFns[primitiveFn](rng);
 }
 
 /// Returns a random function or terminal.
 template <typename T, class RNG>
-const Primitive<T, RNG> &
-randomPrimitive(RNG &rng, const std::vector<Primitive<T, RNG>> &functions,
-                const std::vector<Primitive<T, RNG>> &terminals) {
-  const auto numPrimitives = functions.size() + terminals.size();
-  const std::uniform_int_distribution<size_t> distr(0, numPrimitives - 1);
-  const auto primitive = distr(rng);
+Primitive<T, RNG>
+randomPrimitive(RNG &rng, const std::vector<PrimitiveFn<T, RNG>> &functions,
+                const std::vector<PrimitiveFn<T, RNG>> &terminals) {
+  const auto numPrimitiveFns = functions.size() + terminals.size();
+  std::uniform_int_distribution<size_t> distr(0, numPrimitiveFns - 1);
+  const auto primitiveFn = distr(rng);
 
-  if (primitive < functions.size()) {
-    return functions[primitive];
+  if (primitiveFn < functions.size()) {
+    return functions[primitiveFn](rng);
   } else {
-    return terminals[primitive - functions.size()];
+    return terminals[primitiveFn - functions.size()](rng);
   }
 }
 
@@ -61,28 +62,29 @@ randomPrimitive(RNG &rng, const std::vector<Primitive<T, RNG>> &functions,
  * @param terminals Terminal primitives.
  */
 template <typename T, class RNG>
-Node<T, RNG> grow(RNG &rng, int maxHeight,
-                  const std::vector<Primitive<T, RNG>> &functions,
-                  const std::vector<Primitive<T, RNG>> &terminals) {
+Node<T, RNG> grow(RNG &rng, size_t maxHeight,
+                  const std::vector<PrimitiveFn<T, RNG>> &functions,
+                  const std::vector<PrimitiveFn<T, RNG>> &terminals) {
   Node<T, RNG> root(randomPrimitive(rng, functions, terminals));
 
-  std::stack<std::pair<Node<T, RNG> *, int>> nodes;
+  std::stack<std::pair<Node<T, RNG> *, size_t>> nodes;
   nodes.emplace(&root, 1);
   while (!nodes.empty()) {
-    auto[node, height] = nodes.pop();
+    auto[node, height] = nodes.top();
+    nodes.pop();
+
     if (node->isTerminal()) {
       continue;
     } else if (height >= maxHeight - 1) {
-      for (int i = 0; i < node->numChildren(); ++i) {
-        node->setChild(i, Node<T, RNG>(randomPrimitive(rng, terminals)));
+      for (size_t i = 0; i < node->numChildren(); ++i) {
+        node->setChild(i, randomPrimitive(rng, terminals));
       }
       continue;
     }
 
-    for (int i = 0; i < node->numChildren(); ++i) {
-      node->setChild(i,
-                     Node<T, RNG>(randomPrimitive(rng, functions, terminals)));
-      nodes.emplace(&node->child(i), height + 1);
+    for (size_t i = 0; i < node->numChildren(); ++i) {
+      node->setChild(i, randomPrimitive(rng, functions, terminals));
+      nodes.emplace(&node->mutableChild(i), height + 1);
     }
   }
 
@@ -97,25 +99,27 @@ Node<T, RNG> grow(RNG &rng, int maxHeight,
  * @param terminals Terminal primitives.
  */
 template <typename T, class RNG>
-Node<T, RNG> full(RNG &rng, int maxHeight,
-                  const std::vector<Primitive<T, RNG>> &functions,
-                  const std::vector<Primitive<T, RNG>> &terminals) {
+Node<T, RNG> full(RNG &rng, size_t maxHeight,
+                  const std::vector<PrimitiveFn<T, RNG>> &functions,
+                  const std::vector<PrimitiveFn<T, RNG>> &terminals) {
   Node<T, RNG> root(randomPrimitive(rng, functions));
 
-  std::stack<std::pair<Node<T, RNG> *, int>> nodes;
+  std::stack<std::pair<Node<T, RNG> *, size_t>> nodes;
   nodes.emplace(&root, 1);
   while (!nodes.empty()) {
-    auto[node, height] = nodes.pop();
+    auto[node, height] = nodes.top();
+    nodes.pop();
+
     if (height >= maxHeight - 1) {
-      for (int i = 0; i < node->numChildren(); ++i) {
-        node->setChild(i, Node<T, RNG>(randomPrimitive(rng, terminals)));
+      for (size_t i = 0; i < node->numChildren(); ++i) {
+        node->setChild(i, randomPrimitive(rng, terminals));
       }
       continue;
     }
 
-    for (int i = 0; i < node->numChildren(); ++i) {
-      node->setChild(i, Node<T, RNG>(randomPrimitive(rng, functions)));
-      nodes->emplace(&node->child(i), height + 1);
+    for (size_t i = 0; i < node->numChildren(); ++i) {
+      node->setChild(i, randomPrimitive(rng, functions));
+      nodes.emplace(&node->mutableChild(i), height + 1);
     }
   }
 
@@ -124,32 +128,23 @@ Node<T, RNG> full(RNG &rng, int maxHeight,
 
 /**
  * Generates trees using the ramped half and half method.
- * @param params Genetic Programming parameters.
+ * @param params Genetic Programming parameters. PopulationSize must be even and
+ *   a multiple of (maxHeight - 1).
  * @param rng Random number generator.
  */
 template <typename T, class RNG>
-std::vector<Node<T, RNG>> rampedHalfAndHalf(Params<T, RNG> &params, RNG &rng) {
-  const int increase = params.populationSize % (params.maxHeight - 1);
-  if (increase) { // Make the population a multiple of (maxHeight - 1).
-    LOG(WARNING) << "rampedHalfAndHalf: population increase - " << increase;
-    params.populationSize += params.maxHeight - increase;
-  }
-  if ((params.populationSize / (params.maxHeight - 1)) % 2) {
-    // Params needs to be even.
-    LOG(WARNING) << "rampedHalfAndHalf: population increase to make buckets "
-                 << "even - " << params.maxHeight - 1;
-    params.populationSize += params.maxHeight - 1;
-  }
-  LOG(INFO) << "rampedHalfAndHalf: final population size - "
-            << params.populationSize;
+std::vector<Node<T, RNG>> rampedHalfAndHalf(const Params<T, RNG> &params,
+                                            RNG &rng) {
+  CHECK(params.populationSize % 2 == 0);
+  CHECK(params.populationSize % (params.maxHeight - 1) == 0);
 
-  const int halfPopulationPerHeight =
+  const size_t halfPopulationPerHeight =
       params.populationSize / (params.maxHeight - 1) / 2;
   std::vector<Node<T, RNG>> nodes;
-  for (int i = 2; i <= params.maxHeight; ++i) {
-    for (int j = 0; j < halfPopulationPerHeight; ++j) {
-      nodes.emplace(grow(rng, i, params.functions, params.terminals));
-      nodes.emplace(full(rng, i, params.functions, params.terminals));
+  for (size_t i = 2; i <= params.maxHeight; ++i) {
+    for (size_t j = 0; j < halfPopulationPerHeight; ++j) {
+      nodes.push_back(grow(rng, i, params.functions, params.terminals));
+      nodes.push_back(full(rng, i, params.functions, params.terminals));
     }
   }
 

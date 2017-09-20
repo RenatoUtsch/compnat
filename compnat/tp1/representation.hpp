@@ -72,22 +72,23 @@ using PrimitiveFn = std::function<Primitive<T, RNG>(RNG &rng)>;
 
 /**
  * Represents the parameters used in the program.
+ * TODO(renatoutsch): add accessors to always be sure populationSize is correct.
  */
 template <typename T = double, class RNG = std::mt19937> struct Params {
   /// RNG seed.
   unsigned seed;
 
   /// Number of generations to run.
-  int numGenerations;
+  size_t numGenerations;
 
   /// Population size.
-  int populationSize;
+  size_t populationSize;
 
   /// Tournament size.
-  int tournamentSize;
+  size_t tournamentSize;
 
   /// Maximum tree height.
-  int maxHeight;
+  size_t maxHeight;
 
   /// Crossover probability.
   double crossoverProb;
@@ -101,14 +102,33 @@ template <typename T = double, class RNG = std::mt19937> struct Params {
   /// Available terminal primitives.
   std::vector<PrimitiveFn<T, RNG>> terminals;
 
-  Params(unsigned seed, int numGenerations, int populationSize,
-         int tournamentSize, int maxHeight, double crossoverProb, bool elitism,
-         const std::vector<PrimitiveFn<T, RNG>> &functions,
-         const std::vector<PrimitiveFn<T, RNG>> &terminals)
-      : seed(seed), numGenerations(numGenerations),
-        populationSize(populationSize), tournamentSize(tournamentSize),
-        maxHeight(maxHeight), crossoverProb(crossoverProb), elitism(elitism),
-        functions(functions), terminals(terminals) {
+  Params(unsigned seed_, size_t numGenerations_, size_t populationSize_,
+         size_t tournamentSize_, size_t maxHeight_, double crossoverProb_,
+         bool elitism_, const std::vector<PrimitiveFn<T, RNG>> &functions_,
+         const std::vector<PrimitiveFn<T, RNG>> &terminals_)
+      : seed(seed_), numGenerations(numGenerations_),
+        populationSize(populationSize_), tournamentSize(tournamentSize_),
+        maxHeight(maxHeight_), crossoverProb(crossoverProb_), elitism(elitism_),
+        functions(functions_), terminals(terminals_) {
+    if (populationSize < maxHeight - 1) {
+      LOG(WARNING) << "params: populationSizem must be at least maxHeight - 1";
+      populationSize = maxHeight - 1;
+    }
+
+    const size_t exceeding = populationSize % (maxHeight - 1);
+    if (exceeding) { // Make the population a multiple of (maxHeight - 1).
+      const size_t increase = (maxHeight - 1) - exceeding;
+      LOG(WARNING) << "params: population increase - " << increase;
+      populationSize += increase;
+    }
+
+    if (populationSize % 2) {
+      // Params needs to be even.
+      LOG(WARNING) << "params: population increase to make buckets even - "
+                   << maxHeight - 1;
+      populationSize += maxHeight - 1;
+    }
+
     LOG(INFO) << "Params:";
     LOG(INFO) << "seed: " << seed;
     LOG(INFO) << "numGenerations: " << numGenerations;

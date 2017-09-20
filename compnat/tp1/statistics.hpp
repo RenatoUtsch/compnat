@@ -30,7 +30,10 @@ namespace stats {
 template <typename T, class RNG>
 T fitness(const Node<T, RNG> &individual, const Dataset<T> &dataset) {
   T error = 0;
-  for (const auto & [ input, expected ] : dataset) {
+  for (const auto &sample : dataset) {
+    // Unpack outside the loop because clang on MacOS can't compile it in the
+    // loop.
+    const auto & [ input, expected ] = sample;
     error += std::pow(individual.eval(input) - expected, 2);
   }
 
@@ -42,8 +45,8 @@ T fitness(const Node<T, RNG> &individual, const Dataset<T> &dataset) {
  * This vector is in the same order of the population vector.
  */
 template <typename T, class RNG>
-std::vector<T, RNG> fitness(const std::vector<Node<T, RNG>> &population,
-                            const Dataset<T> &dataset) {
+std::vector<T> fitness(const std::vector<Node<T, RNG>> &population,
+                       const Dataset<T> &dataset) {
   // TODO(renatoutsch): implement this in parallel.
   std::vector<T> results(population.size());
   for (size_t i = 0; i < population.size(); ++i) {
@@ -59,7 +62,7 @@ std::vector<T, RNG> fitness(const std::vector<Node<T, RNG>> &population,
 template <typename T, class RNG>
 std::vector<size_t> sizes(const std::vector<Node<T, RNG>> &population) {
   // TODO(renatoutsch): implement this in parallel.
-  std::vector<T> sizes(population.size());
+  std::vector<size_t> sizes(population.size());
   for (size_t i = 0; i < population.size(); ++i) {
     sizes[i] = population[i].size();
   }
@@ -73,7 +76,7 @@ std::vector<size_t> sizes(const std::vector<Node<T, RNG>> &population) {
 template <typename T, class RNG>
 std::vector<std::string> strs(const std::vector<Node<T, RNG>> &population) {
   // TODO(renatoutsch): implement this in parallel.
-  std::vector<T> texts(population.size());
+  std::vector<std::string> texts(population.size());
   for (size_t i = 0; i < population.size(); ++i) {
     texts[i] = population[i].str();
   }
