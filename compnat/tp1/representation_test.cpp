@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-#include "primitives.hpp"
 #include "representation.hpp"
 
 #include <random>
 
 #include <gtest/gtest.h>
+
+#include "primitives.hpp"
 
 namespace {
 using T = double;

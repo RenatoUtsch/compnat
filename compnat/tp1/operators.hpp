@@ -24,6 +24,7 @@
 
 #include "generators.hpp"
 #include "representation.hpp"
+#include "statistics.hpp"
 
 namespace operators {
 
@@ -120,45 +121,58 @@ Node<T, RNG> mutation(RNG &rng, const Params<T, RNG> &params,
 
 /**
  * Generates a new population from an existing one.
- * @param
+ * @param rng Random number generator.
  * @param params Genetic programming params.
- * @param statistics Statistics of the old population.
+ * @param population Parent generation.
+ * @param statistics Statistics of the parent generation.
+ * @return Pair containing the new population and the indexes of crossover
+ *   children.
  */
 template <typename T, class RNG>
-std::vector<Node<T, RNG>>
-generateNewPopulation(RNG &rng, const Params<T, RNG> &params,
-                      const std::vector<Node<T, RNG>> &population,
-                      const std::vector<T> &fitness,
-                      const std::vector<T> &sizes) {
+std::pair<std::vector<Node<T, RNG>>, std::vector<size_t>>
+newGeneration(RNG &rng, const Params<T, RNG> &params,
+              const std::vector<Node<T, RNG>> &parentPopulation,
+              const stats::Statistics<T, RNG> &parentStats) {
   CHECK(params.crossoverProb >= 0.0 && params.crossoverProb < 1.0);
 
   std::vector<Node<T, RNG>> newPopulation;
   if (params.elitism) {
-    /* newPopulation.push_back(population[statistics.best]); // Make a copy. */
+    // Make a copy.
+    newPopulation.push_back(parentPopulation[parentStats.best]);
   }
 
   std::uniform_real_distribution<> distr(0.0, 1.0);
-  while (newPopulation.size() < population.size()) {
-    const size_t p1 = tournamentSelection(rng, params.tournamentSize, fitness);
-    const size_t p2 = tournamentSelection(rng, params.tournamentSize, fitness);
+  std::vector<size_t> crossoverIndices;
+  size_t i = 0;
+  while (newPopulation.size() < parentPopulation.size()) {
+    const size_t p1 =
+        tournamentSelection(rng, params.tournamentSize, parentStats.fitness);
+    const size_t p2 =
+        tournamentSelection(rng, params.tournamentSize, parentStats.fitness);
+
     if (distr(rng) <= params.crossoverProb) { // Crossover
-      auto[c1, c2] =
-          crossover(rng, population[p1], sizes[p1], population[p2], sizes[p2]);
+      auto[c1, c2] = crossover(rng, parentPopulation[p1], parentStats.sizes[p1],
+                               parentPopulation[p2], parentStats.sizes[p2]);
       newPopulation.push_back(std::move(c1));
       newPopulation.push_back(std::move(c2));
+      crossoverIndices.push_back(i++);
+      crossoverIndices.push_back(i++);
     } else { // Mutation
-      newPopulation.push_back(mutation(rng, params, population[p1], sizes[p1]));
-      newPopulation.push_back(mutation(rng, params, population[p2], sizes[p2]));
+      newPopulation.push_back(
+          mutation(rng, params, parentPopulation[p1], parentStats.sizes[p1]));
+      newPopulation.push_back(
+          mutation(rng, params, parentPopulation[p2], parentStats.sizes[p2]));
+      i += 2;
     }
   }
 
   // We added always two new individuals, so we may have exceeded the population
   // size.
-  if (newPopulation.size() > population.size()) {
-    CHECK(newPopulation.size() == population.size() + 1);
+  if (newPopulation.size() > parentPopulation.size()) {
+    CHECK(newPopulation.size() == parentPopulation.size() + 1);
     newPopulation.pop_back();
   }
-  return newPopulation;
+  return {newPopulation, crossoverIndices};
 }
 
 } // namespace operators

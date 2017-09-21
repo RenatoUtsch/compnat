@@ -15,18 +15,19 @@
  */
 
 #include "generators.hpp"
-#include "primitives.hpp"
-#include "utils.hpp"
 
 #include <random>
 
 #include <gtest/gtest.h>
 
+#include "primitives.hpp"
+#include "utils.hpp"
+
 namespace {
-using generators::randomPrimitive;
-using generators::grow;
 using generators::full;
+using generators::grow;
 using generators::rampedHalfAndHalf;
+using generators::randomPrimitive;
 using utils::strCat;
 using T = double;
 using RNG = std::mt19937;
@@ -52,7 +53,7 @@ void fillChildrenWithVars(RNG &rng, Node<T, RNG> &node) {
 }
 
 TEST(RandomPrimitiveTest, SinglePrimitivesWorksCorrectly) {
-  RNG rng(0);
+  RNG rng;
   const auto &functions = getFunctions();
 
   auto node1 = Node<T, RNG>(randomPrimitive(rng, functions));
@@ -65,7 +66,7 @@ TEST(RandomPrimitiveTest, SinglePrimitivesWorksCorrectly) {
 }
 
 TEST(RandomPrimitiveTest, MultiplePrimitivesWorksCorrectly) {
-  RNG rng(1); // Seed to generate the test we want.
+  RNG rng;
   const auto &functions = getFunctions();
   const auto &terminals = getTerminals();
 
@@ -81,7 +82,7 @@ TEST(RandomPrimitiveTest, MultiplePrimitivesWorksCorrectly) {
 }
 
 TEST(GrowTest, WorksCorrectly) {
-  RNG rng(1); // Seed to generate the test we want.
+  RNG rng;
   const size_t maxHeight = 7;
   const auto &functions = getFunctions();
   const auto &terminals = getTerminals();
@@ -93,7 +94,7 @@ TEST(GrowTest, WorksCorrectly) {
 }
 
 TEST(FullTest, WorksCorrectly) {
-  RNG rng(1); // Seed to generate the test we want.
+  RNG rng;
   const size_t maxHeight = 7;
   const auto &functions = getFunctions();
   const auto &terminals = getTerminals();
@@ -105,14 +106,13 @@ TEST(FullTest, WorksCorrectly) {
 }
 
 TEST(RampedHalfAndHalfTest, WorksCorrectly) {
-  const unsigned seed = 0;
   const size_t populationSize = 48;
   const size_t maxHeight = 7;
 
-  RNG rng(seed);
-  Params<T, RNG> params(seed, 100, populationSize, 7, maxHeight, 0.8, false,
+  RNG rng;
+  Params<T, RNG> params(0, 100, populationSize, 7, maxHeight, 0.8, false,
                         getFunctions(), getTerminals());
-  auto nodes = rampedHalfAndHalf<T, RNG>(params, rng);
+  auto nodes = rampedHalfAndHalf<T, RNG>(rng, params);
   ASSERT_EQ(populationSize, nodes.size());
 }
 

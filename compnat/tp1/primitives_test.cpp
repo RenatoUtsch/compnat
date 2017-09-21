@@ -15,11 +15,12 @@
  */
 
 #include "primitives.hpp"
-#include "representation.hpp"
 
 #include <random>
 
 #include <gtest/gtest.h>
+
+#include "representation.hpp"
 
 namespace {
 using T = double;

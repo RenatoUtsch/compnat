@@ -56,6 +56,7 @@ cc_library(
     deps = [
         ":generators",
         ":representation",
+        ":statistics",
     ],
 )
 
@@ -88,7 +89,7 @@ cc_test(
     size = "small",
     srcs = ["parser_test.cpp"],
     copts = COMPNAT_CPP_COPTS,
-    data = ["//compnat/tp1/datasets:unit_test"],
+    data = ["//compnat/tp1/datasets"],
     deps = [
         ":parser",
         "//third_party:gmock",
@@ -164,7 +165,10 @@ cc_test(
     size = "small",
     srcs = ["statistics_test.cpp"],
     copts = COMPNAT_CPP_COPTS,
+    data = ["//compnat/tp1/datasets"],
     deps = [
+        ":generators",
+        ":parser",
         ":primitives",
         ":representation",
         ":statistics",

@@ -133,8 +133,8 @@ Node<T, RNG> full(RNG &rng, size_t maxHeight,
  * @param rng Random number generator.
  */
 template <typename T, class RNG>
-std::vector<Node<T, RNG>> rampedHalfAndHalf(const Params<T, RNG> &params,
-                                            RNG &rng) {
+std::vector<Node<T, RNG>> rampedHalfAndHalf(RNG &rng,
+                                            const Params<T, RNG> &params) {
   CHECK(params.populationSize % 2 == 0);
   CHECK(params.populationSize % (params.maxHeight - 1) == 0);
 

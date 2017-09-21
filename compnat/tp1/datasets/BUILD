@@ -15,6 +15,14 @@
 package(default_visibility = ["//compnat/tp1:__subpackages__"])
 
 filegroup(
-    name = "unit_test",
-    srcs = ["unit_test.csv"],
+    name = "datasets",
+    srcs = [
+        "house-test.csv",
+        "house-train.csv",
+        "keijzer-10-test.csv",
+        "keijzer-10-train.csv",
+        "keijzer-7-test.csv",
+        "keijzer-7-train.csv",
+        "unit_test.csv",
+    ],
 )
