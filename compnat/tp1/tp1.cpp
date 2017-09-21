@@ -22,8 +22,10 @@
 #include "parser.hpp"
 #include "primitives.hpp"
 #include "representation.hpp"
+#include "simulation.hpp"
 
-DEFINE_string(dataset, "", "File containing the dataset.");
+DEFINE_string(dataset_train, "", "File containing the train dataset.");
+DEFINE_string(dataset_test, "", "File containing the test dataset.");
 DEFINE_int32(seed, -1, "Initial seed (-1 to select at random).");
 DEFINE_int32(num_generations, 50, "Number of generations to run.");
 DEFINE_int32(population_size, 100, "Size of the population.");
@@ -46,17 +48,18 @@ int main(int argc, char **argv) {
     FLAGS_seed = rd();
   }
 
-  const auto &dataset = parser::loadDataset<T>(FLAGS_dataset);
+  const auto &trainDataset = parser::loadDataset<T>(FLAGS_dataset_train);
+  const auto &testDataset = parser::loadDataset<T>(FLAGS_dataset_test);
 
   const std::vector<PrimitiveFn<T, RNG>> functions = {
-      primitives::sumFn<T, RNG>,  primitives::subFn<T, RNG>,
+      primitives::sumFn<T, RNG>, primitives::subFn<T, RNG>,
       primitives::multFn<T, RNG>, primitives::divFn<T, RNG>,
-      primitives::logFn<T, RNG>,
   };
 
+  // Add the correct number of variable terminals.
   std::vector<PrimitiveFn<T, RNG>> terminals;
   terminals.push_back(primitives::constTerm<T, RNG>);
-  const auto &datasetSample = dataset[0].first;
+  const auto &datasetSample = trainDataset[0].first;
   for (const auto & [ key, _ ] : datasetSample) {
     terminals.push_back(primitives::makeVarTerm<T, RNG>(key));
   }
@@ -65,6 +68,8 @@ int main(int argc, char **argv) {
                         FLAGS_population_size, FLAGS_tournament_size,
                         FLAGS_max_height, FLAGS_crossover_prob, FLAGS_elitism,
                         functions, terminals);
+
+  simulation::simulate(params, trainDataset, testDataset);
 
   return 0;
 }

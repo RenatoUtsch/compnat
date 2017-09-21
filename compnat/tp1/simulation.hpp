@@ -28,24 +28,24 @@ namespace simulation {
 
 template <typename T, class RNG>
 void simulate(const Params<T, RNG> &params, const Dataset<T> &trainDataset,
-              [[maybe_unused]] const Dataset<T> &testDataset) { // TODO: for now
+              const Dataset<T> &testDataset) {
   RNG rng(params.seed);
 
+  LOG(INFO) << "";
   LOG(INFO) << "Generation 0";
   auto population = generators::rampedHalfAndHalf(rng, params);
   auto stats = stats::Statistics<T, RNG>(population, trainDataset);
+  std::vector<size_t> crossoverIndices;
   for (size_t i = 1; i < params.numGenerations; ++i) {
+    LOG(INFO) << "";
     LOG(INFO) << "Generation " << i;
-    auto[newPopulation, crossoverIndices] =
+    std::tie(population, crossoverIndices) =
         operators::newGeneration(rng, params, population, stats);
-
-    auto newStats = stats::Statistics<T, RNG>(
-        newPopulation, trainDataset, stats.averageFitness, crossoverIndices);
-
-    population = std::move(newPopulation);
-    stats = std::move(newStats);
+    stats = stats::Statistics<T, RNG>(population, trainDataset,
+                                      stats.averageFitness, crossoverIndices);
   }
 
+  LOG(INFO) << "";
   LOG(INFO) << "Test statistics";
   auto testStats = stats::Statistics<T, RNG>(population, testDataset);
 }

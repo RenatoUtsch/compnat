@@ -45,7 +45,7 @@ size_t tournamentSelection(RNG &rng, size_t tournamentSize,
 
   for (size_t i = 1; i < tournamentSize; ++i) {
     size_t candidate = distr(rng);
-    if (fitness[candidate] > fitness[best]) {
+    if (fitness[candidate] < fitness[best]) {
       best = candidate;
     }
   }

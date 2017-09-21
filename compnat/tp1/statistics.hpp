@@ -96,9 +96,6 @@ template <typename T, class RNG> struct Statistics {
   /// Sizes of all individuals in the generation.
   std::vector<size_t> sizes;
 
-  /// String representation of all individuals in the generation.
-  std::vector<std::string> strs;
-
   /// Index of the best individual in the generation.
   size_t best;
 
@@ -107,6 +104,9 @@ template <typename T, class RNG> struct Statistics {
 
   /// Average fitness of the generation.
   T averageFitness;
+
+  /// Average individual size.
+  size_t averageSize;
 
   /// Number of repeated individuals in the generation.
   size_t numRepeatedIndividuals;
@@ -119,24 +119,34 @@ template <typename T, class RNG> struct Statistics {
   /// parent fitness.
   size_t numWorse;
 
+  /// String representation of the best individual.
+  std::string bestStr;
+
   Statistics(const std::vector<Node<T, RNG>> &population,
              const Dataset<T> &dataset, const T averageParentFitness = 0,
              const std::vector<size_t> &crossoverIndices = {})
       : fitness(::stats::fitness(population, dataset)),
-        sizes(::stats::sizes(population)), strs(::stats::strs(population)),
-        best(0), worst(0), averageFitness(0), numRepeatedIndividuals(0),
-        numBetter(0), numWorse(0) {
+        sizes(::stats::sizes(population)), best(0), worst(0), averageFitness(0),
+        averageSize(0), numRepeatedIndividuals(0), numBetter(0), numWorse(0) {
     calcFitnessStats_();
     calcRepeatedIndividuals_();
+    calcAverageSize_();
     calcCrossoverStats_(averageParentFitness, crossoverIndices);
 
-    LOG(INFO) << "  best individual: " << strs[best];
+    bestStr = population[best].str();
+
     LOG(INFO) << "  best fitness: " << fitness[best];
-    LOG(INFO) << "  average fitness: " << averageFitness;
     LOG(INFO) << "  worst fitness: " << fitness[worst];
+    LOG(INFO) << "  averageFitness: " << averageFitness;
+    LOG(INFO) << "  averageSize: " << averageSize;
     LOG(INFO) << "  numRepeatedIndividuals: " << numRepeatedIndividuals;
-    LOG(INFO) << "  numBetter crossover: " << numBetter;
-    LOG(INFO) << "  numWorse crossover: " << numWorse;
+
+    if (!crossoverIndices.empty()) {
+      LOG(INFO) << "  numBetter crossover: " << numBetter;
+      LOG(INFO) << "  numWorse crossover: " << numWorse;
+    }
+
+    LOG(INFO) << "  best individual: " << bestStr;
   }
 
 private:
@@ -156,23 +166,30 @@ private:
 
   /// numRepeatedIndividuals.
   void calcRepeatedIndividuals_() {
-    std::unordered_set<std::string> set;
-    for (const auto &str : strs) {
-      if (set.count(str)) {
+    std::unordered_set<T> set;
+    for (const auto &fit : fitness) {
+      if (set.count(fit)) {
         ++numRepeatedIndividuals;
       } else {
-        set.insert(str);
+        set.insert(fit);
       }
     }
+  }
+
+  void calcAverageSize_() {
+    for (auto size : sizes) {
+      averageSize += size;
+    }
+    averageSize /= sizes.size();
   }
 
   // numBetter, numWorse.
   void calcCrossoverStats_(T averageParentFitness,
                            const std::vector<size_t> &crossoverIndices) {
     for (const auto i : crossoverIndices) {
-      if (fitness[i] > averageParentFitness) {
+      if (fitness[i] < averageParentFitness) {
         ++numBetter;
-      } else if (fitness[i] < averageParentFitness) {
+      } else if (fitness[i] > averageParentFitness) {
         ++numWorse;
       }
     }

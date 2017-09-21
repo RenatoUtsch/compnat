@@ -112,7 +112,6 @@ TEST(StatisticsTest, SingleGenerationPerformanceBenchmark) {
   const auto &stats = Statistics<T, RNG>(population, dataset);
   EXPECT_EQ((size_t)600, stats.fitness.size());
   EXPECT_EQ((size_t)600, stats.sizes.size());
-  EXPECT_EQ((size_t)600, stats.strs.size());
 }
 
 } // namespace

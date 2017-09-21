@@ -34,7 +34,7 @@ TEST(NewGenerationTest, WorksCorrectly) {
 
   // For params.maxHeight, functions and terminals.
   Params<T, RNG> params(
-      0, 10, 60, 5, 7, 0.9, true,
+      0, 10, 60, 5, 7, 0.9, false,
       {
           primitives::sumFn<T, RNG>, primitives::subFn<T, RNG>,
           primitives::multFn<T, RNG>, primitives::divFn<T, RNG>,

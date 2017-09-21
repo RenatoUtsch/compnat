@@ -24,6 +24,7 @@ cc_binary(
         ":parser",
         ":primitives",
         ":representation",
+        ":simulation",
     ],
 )
 

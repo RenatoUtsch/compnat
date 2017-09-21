@@ -62,7 +62,7 @@ TEST(RandomPrimitiveTest, SinglePrimitivesWorksCorrectly) {
   auto node2 = Node<T, RNG>(randomPrimitive(rng, functions));
   fillChildrenWithVars(rng, node2);
 
-  ASSERT_NE(node1.str(), node2.str());
+  EXPECT_NE(node1.str(), node2.str());
 }
 
 TEST(RandomPrimitiveTest, MultiplePrimitivesWorksCorrectly) {
@@ -116,7 +116,7 @@ TEST(FullTest, WorksCorrectly) {
   auto node1 = full<T, RNG>(rng, maxHeight, functions, terminals);
   auto node2 = full<T, RNG>(rng, maxHeight, functions, terminals);
 
-  ASSERT_NE(node1.str(), node2.str());
+  EXPECT_NE(node1.str(), node2.str());
 }
 
 TEST(RampedHalfAndHalfTest, WorksCorrectly) {
@@ -127,7 +127,7 @@ TEST(RampedHalfAndHalfTest, WorksCorrectly) {
   Params<T, RNG> params(0, 100, populationSize, 7, maxHeight, 0.8, false,
                         getFunctions(), getTerminals());
   auto nodes = rampedHalfAndHalf<T, RNG>(rng, params);
-  ASSERT_EQ(populationSize, nodes.size());
+  EXPECT_EQ(populationSize, nodes.size());
 }
 
 } // namespace

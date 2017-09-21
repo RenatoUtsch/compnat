@@ -36,7 +36,7 @@ using operators::tournamentSelection;
 TEST(TournamentSelectionTest, WorksCorrectly) {
   RNG rng;
   const size_t selected = tournamentSelection<T>(rng, 9, {1, 5, 4});
-  EXPECT_EQ((size_t)1, selected);
+  EXPECT_EQ((size_t)0, selected);
 }
 
 TEST(CrossoverTest, WorksCorrectly) {
