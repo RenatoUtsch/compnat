@@ -61,9 +61,10 @@ int main(int argc, char **argv) {
     terminals.push_back(primitives::makeVarTerm<T, RNG>(key));
   }
 
-  Params<> params(FLAGS_seed, FLAGS_num_generations, FLAGS_population_size,
-                  FLAGS_tournament_size, FLAGS_max_height, FLAGS_crossover_prob,
-                  FLAGS_elitism, functions, terminals);
+  Params<T, RNG> params(FLAGS_seed, FLAGS_num_generations,
+                        FLAGS_population_size, FLAGS_tournament_size,
+                        FLAGS_max_height, FLAGS_crossover_prob, FLAGS_elitism,
+                        functions, terminals);
 
   return 0;
 }

@@ -18,7 +18,6 @@
 #define COMPNAT_TP1_REPRESENTATION_HPP
 
 #include <functional>
-#include <random>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -74,7 +73,7 @@ using PrimitiveFn = std::function<Primitive<T, RNG>(RNG &rng)>;
  * Represents the parameters used in the program.
  * TODO(renatoutsch): add accessors to always be sure populationSize is correct.
  */
-template <typename T = double, class RNG = std::mt19937> struct Params {
+template <typename T, class RNG> struct Params {
   /// RNG seed.
   unsigned seed;
 
