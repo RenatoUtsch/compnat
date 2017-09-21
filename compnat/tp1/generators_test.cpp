@@ -71,14 +71,28 @@ TEST(RandomPrimitiveTest, MultiplePrimitivesWorksCorrectly) {
   const auto &terminals = getTerminals();
 
   auto node1 = Node<T, RNG>(randomPrimitive(rng, functions, terminals));
-  ASSERT_TRUE(node1.isTerminal());
+  for (size_t i = 0; i < node1.numChildren(); ++i) {
+    node1.setChild(0, randomPrimitive(rng, terminals));
+  }
+
+  if (node1.numChildren()) {
+    EXPECT_FALSE(node1.isTerminal());
+  } else {
+    EXPECT_TRUE(node1.isTerminal());
+  }
 
   auto node2 = Node<T, RNG>(randomPrimitive(rng, functions, terminals));
-  ASSERT_FALSE(node2.isTerminal());
-  node2.setChild(0, primitives::makeVarTerm<T, RNG>("x0")(rng));
-  node2.setChild(1, primitives::makeVarTerm<T, RNG>("x1")(rng));
+  for (size_t i = 0; i < node2.numChildren(); ++i) {
+    node2.setChild(0, randomPrimitive(rng, terminals));
+  }
 
-  ASSERT_NE(node1.str(), node2.str());
+  if (node2.numChildren()) {
+    EXPECT_FALSE(node2.isTerminal());
+  } else {
+    EXPECT_TRUE(node2.isTerminal());
+  }
+
+  EXPECT_NE(node1.str(), node2.str());
 }
 
 TEST(GrowTest, WorksCorrectly) {
@@ -90,7 +104,7 @@ TEST(GrowTest, WorksCorrectly) {
   auto node1 = grow<T, RNG>(rng, maxHeight, functions, terminals);
   auto node2 = grow<T, RNG>(rng, maxHeight, functions, terminals);
 
-  ASSERT_NE(node1.str(), node2.str());
+  EXPECT_NE(node1.str(), node2.str());
 }
 
 TEST(FullTest, WorksCorrectly) {

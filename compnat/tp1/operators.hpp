@@ -17,6 +17,7 @@
 #ifndef COMPNAT_TP1_OPERATORS_HPP
 #define COMPNAT_TP1_OPERATORS_HPP
 
+#include <functional>
 #include <random>
 #include <stack>
 #include <utility>
@@ -27,46 +28,6 @@
 #include "statistics.hpp"
 
 namespace operators {
-
-/**
- * Pushes children into a stack.
- */
-template <typename T, class RNG>
-void pushChildren_(std::stack<std::pair<Node<T, RNG> *, size_t>> &s,
-                   Node<T, RNG> *node) {
-  for (size_t i = 0; i < node->numChildren(); ++i) {
-    s.push({node, i});
-  }
-}
-
-/**
- * Uses a traversal to select a random tree point, except for the root.
- * @param rng Random number generator.
- * @param root Tree to select a node.
- * @param size Size of the tree.
- * @return Mutable reference to the parent's node and index into the child's
- * list to the selected point.
- */
-template <typename T, class RNG>
-std::pair<Node<T, RNG> *, size_t> randomTreePoint(RNG &rng, Node<T, RNG> &root,
-                                                  size_t size) {
-  // Start from 1 to not select the root.
-  std::uniform_int_distribution<size_t> distr(1, size - 1);
-  const size_t selectedPoint = distr(rng);
-
-  std::stack<std::pair<Node<T, RNG> *, size_t>> s;
-  pushChildren_(s, &root);
-  for (size_t current = 1;; ++current) {
-    auto[parent, childIndex] = s.top();
-    s.pop();
-
-    if (current == selectedPoint) {
-      return {parent, childIndex};
-    }
-
-    pushChildren_(s, &parent->mutableChild(childIndex));
-  }
-}
 
 /**
  * Realizes tournament selection in the population.
@@ -92,30 +53,71 @@ size_t tournamentSelection(RNG &rng, size_t tournamentSize,
   return best;
 }
 
+/**
+ * Uses a traversal to select a random tree point.
+ * @param rng Random number generator.
+ * @param root Tree to select a node.
+ * @param size Size of the tree.
+ * @return Reference to the selected node.
+ */
+template <typename T, class RNG>
+Node<T, RNG> &randomTreePoint(RNG &rng, Node<T, RNG> &root, size_t size) {
+  std::uniform_int_distribution<size_t> distr(0, size - 1);
+  const size_t selectedPoint = distr(rng);
+
+  std::stack<std::reference_wrapper<Node<T, RNG>>> s;
+  s.push(root);
+  for (size_t current = 0;; ++current) {
+    Node<T, RNG> &node = s.top();
+    if (current == selectedPoint) {
+      return node;
+    }
+
+    s.pop();
+    for (size_t i = 0; i < node.numChildren(); ++i) {
+      s.push(node.mutableChild(i));
+    }
+  }
+}
+
+/**
+ * Realizes crossover on the two trees.
+ * @param rng Random number generator.
+ * @param parentX First parent tree.
+ * @param sizeX Number of nodes in the parent tree.
+ * @param parentY Second parent tree.
+ * @param sizeY Number of nodes in the parent tree.
+ */
 template <typename T, class RNG>
 std::pair<Node<T, RNG>, Node<T, RNG>>
-crossover(RNG &rng, const Node<T, RNG> &x, size_t sizeX, const Node<T, RNG> &y,
-          size_t sizeY) {
-  Node<T, RNG> childX = x;
-  Node<T, RNG> childY = y;
-  auto[crossPointX, childIndexX] = randomTreePoint(rng, childX, sizeX);
-  auto[crossPointY, childIndexY] = randomTreePoint(rng, childY, sizeY);
-  std::swap(crossPointX->mutableChild(childIndexX),
-            crossPointY->mutableChild(childIndexY));
+crossover(RNG &rng, const Node<T, RNG> &parentX, size_t sizeX,
+          const Node<T, RNG> &parentY, size_t sizeY) {
+  Node<T, RNG> childX = parentX;
+  Node<T, RNG> childY = parentY;
+
+  auto &crossNodeX = randomTreePoint(rng, childX, sizeX);
+  auto &crossNodeY = randomTreePoint(rng, childY, sizeY);
+  std::swap(crossNodeX, crossNodeY);
 
   return {childX, childY};
 }
 
+/**
+ * Realizes mutation on the given tree.
+ * @param rng Random number generator.
+ * @param params Genetic algorithm params.
+ * @param parent Parent tree to mutate.
+ * @param size Number of nodes in the parent tree.
+ */
 template <typename T, class RNG>
 Node<T, RNG> mutation(RNG &rng, const Params<T, RNG> &params,
-                      const Node<T, RNG> &individual, size_t size) {
-  Node<T, RNG> child = individual;
-  auto[mutationPoint, childIndex] = randomTreePoint(rng, child, size);
+                      const Node<T, RNG> &parent, size_t size) {
+  Node<T, RNG> child = parent;
 
-  // TODO(renatoutsch): check if params.maxHeight here is appropriate.
-  mutationPoint->setChild(childIndex,
-                          generators::grow(rng, params.maxHeight,
-                                           params.functions, params.terminals));
+  auto &mutationNode = randomTreePoint(rng, child, size);
+  mutationNode = generators::grow(rng, params.maxHeight, params.functions,
+                                  params.terminals);
+
   return child;
 }
 
@@ -125,7 +127,7 @@ Node<T, RNG> mutation(RNG &rng, const Params<T, RNG> &params,
  * @param params Genetic programming params.
  * @param population Parent generation.
  * @param statistics Statistics of the parent generation.
- * @return Pair containing the new population and the indexes of crossover
+ * @return Pair containing the new population and the indices of crossover
  *   children.
  */
 template <typename T, class RNG>

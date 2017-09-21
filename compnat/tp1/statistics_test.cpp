@@ -49,8 +49,7 @@ std::vector<Node<T, RNG>> generatePopulation() {
 TEST(FitnessTest, SingleWorksCorrectly) {
   const auto &population = generatePopulation();
   const Dataset<T> dataset = {
-      {{{"x0", 12}, {"x1", 2}}, 15},
-      {{{"x0", 15}, {"x1", 4}}, 21},
+      {{{"x0", 12}, {"x1", 2}}, 15}, {{{"x0", 15}, {"x1", 4}}, 21},
   };
 
   const T fitness = stats::fitness(population[0], dataset);
@@ -60,8 +59,7 @@ TEST(FitnessTest, SingleWorksCorrectly) {
 TEST(FitnessTest, WorksCorrectly) {
   const auto &population = generatePopulation();
   const Dataset<T> dataset = {
-      {{{"x0", 12}, {"x1", 2}}, 15},
-      {{{"x0", 15}, {"x1", 4}}, 21},
+      {{{"x0", 12}, {"x1", 2}}, 15}, {{{"x0", 15}, {"x1", 4}}, 21},
   };
 
   const auto &fitness = stats::fitness(population, dataset);
@@ -87,27 +85,24 @@ TEST(StrsTest, WorksCorrectly) {
 
 TEST(StatisticsTest, SingleGenerationPerformanceBenchmark) {
   const auto &dataset =
-      parser::loadDataset<T>("compnat/tp1/datasets/house-train.csv");
+      parser::loadDataset<T>("compnat/tp1/datasets/unit_test.csv");
 
   // Params for a big test.
   Params<T, RNG> params( // Improve formatting
       0, 1, 600, 7, 7, 0.9, false,
       {
-          primitives::sumFn<T, RNG>,
-          primitives::subFn<T, RNG>,
-          primitives::multFn<T, RNG>,
-          primitives::divFn<T, RNG>,
+          primitives::sumFn<T, RNG>, primitives::subFn<T, RNG>,
+          primitives::multFn<T, RNG>, primitives::divFn<T, RNG>,
       },
       {
-          primitives::constTerm<T, RNG>,
-          primitives::makeVarTerm<T, RNG>("x0"),
+          primitives::constTerm<T, RNG>, primitives::makeVarTerm<T, RNG>("x0"),
           primitives::makeVarTerm<T, RNG>("x1"),
           primitives::makeVarTerm<T, RNG>("x2"),
           primitives::makeVarTerm<T, RNG>("x3"),
-          primitives::makeVarTerm<T, RNG>("x4"),
-          primitives::makeVarTerm<T, RNG>("x5"),
-          primitives::makeVarTerm<T, RNG>("x6"),
-          primitives::makeVarTerm<T, RNG>("x7"),
+          /* primitives::makeVarTerm<T, RNG>("x4"), */
+          /* primitives::makeVarTerm<T, RNG>("x5"), */
+          /* primitives::makeVarTerm<T, RNG>("x6"), */
+          /* primitives::makeVarTerm<T, RNG>("x7"), */
       });
 
   RNG rng;
@@ -118,8 +113,6 @@ TEST(StatisticsTest, SingleGenerationPerformanceBenchmark) {
   EXPECT_EQ((size_t)600, stats.fitness.size());
   EXPECT_EQ((size_t)600, stats.sizes.size());
   EXPECT_EQ((size_t)600, stats.strs.size());
-  EXPECT_EQ((size_t)227, stats.best);
-  EXPECT_EQ((size_t)505, stats.worst);
 }
 
 } // namespace

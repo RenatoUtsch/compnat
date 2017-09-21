@@ -65,9 +65,11 @@ cc_test(
     size = "small",
     srcs = ["operators_test.cpp"],
     copts = COMPNAT_CPP_COPTS,
+    data = ["//compnat/tp1/datasets"],
     deps = [
         ":generators",
         ":operators",
+        ":parser",
         ":primitives",
         ":statistics",
         "//third_party:gtest",
@@ -146,8 +148,25 @@ cc_library(
     copts = COMPNAT_CPP_COPTS,
     deps = [
         ":generators",
+        ":operators",
         ":representation",
         ":statistics",
+        "//third_party:glog",
+    ],
+)
+
+cc_test(
+    name = "simulation_test",
+    size = "small",
+    srcs = ["simulation_test.cpp"],
+    copts = COMPNAT_CPP_COPTS,
+    data = ["//compnat/tp1/datasets"],
+    deps = [
+        ":parser",
+        ":primitives",
+        ":representation",
+        ":simulation",
+        "//third_party:gtest",
     ],
 )
 
@@ -157,6 +176,7 @@ cc_library(
     copts = COMPNAT_CPP_COPTS,
     deps = [
         ":representation",
+        "//third_party:glog",
     ],
 )
 

@@ -17,7 +17,10 @@
 #ifndef COMPNAT_TP1_SIMULATION_HPP
 #define COMPNAT_TP1_SIMULATION_HPP
 
+#include <glog/logging.h>
+
 #include "generators.hpp"
+#include "operators.hpp"
 #include "representation.hpp"
 #include "statistics.hpp"
 
@@ -28,10 +31,23 @@ void simulate(const Params<T, RNG> &params, const Dataset<T> &trainDataset,
               [[maybe_unused]] const Dataset<T> &testDataset) { // TODO: for now
   RNG rng(params.seed);
 
-  const auto &population = rampedHalfAndHalf(params, rng);
-  const auto &fitness = stats::fitness(population, trainDataset);
-  const auto &sizes = stats::sizes(population);
-  const auto &strs = stats::strs(population);
+  LOG(INFO) << "Generation 0";
+  auto population = generators::rampedHalfAndHalf(rng, params);
+  auto stats = stats::Statistics<T, RNG>(population, trainDataset);
+  for (size_t i = 1; i < params.numGenerations; ++i) {
+    LOG(INFO) << "Generation " << i;
+    auto[newPopulation, crossoverIndices] =
+        operators::newGeneration(rng, params, population, stats);
+
+    auto newStats = stats::Statistics<T, RNG>(
+        newPopulation, trainDataset, stats.averageFitness, crossoverIndices);
+
+    population = std::move(newPopulation);
+    stats = std::move(newStats);
+  }
+
+  LOG(INFO) << "Test statistics";
+  auto testStats = stats::Statistics<T, RNG>(population, testDataset);
 }
 
 } // namespace simulation

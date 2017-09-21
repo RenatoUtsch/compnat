@@ -21,6 +21,7 @@
 #include <gtest/gtest.h>
 
 #include "generators.hpp"
+#include "parser.hpp"
 #include "primitives.hpp"
 #include "statistics.hpp"
 
@@ -59,10 +60,10 @@ TEST(CrossoverTest, WorksCorrectly) {
       crossover<T, RNG>(rng, node0, nodeSizes[0], node1, nodeSizes[1]);
 
   const auto &childSizes = stats::sizes<T, RNG>({child0, child1});
-  EXPECT_EQ((size_t)4, childSizes[0]);
-  EXPECT_EQ("(log2(x0) + x1)", child0.str());
-  EXPECT_EQ((size_t)2, childSizes[1]);
-  EXPECT_EQ("log2(x0)", child1.str());
+  EXPECT_NE(nodeSizes[0], childSizes[0]);
+  EXPECT_NE(node0.str(), child0.str());
+  EXPECT_NE(nodeSizes[1], childSizes[1]);
+  EXPECT_NE(node1.str(), child1.str());
 }
 
 TEST(MutationTest, WorksCorrectly) {
@@ -86,11 +87,63 @@ TEST(MutationTest, WorksCorrectly) {
 
   auto child = mutation(rng, params, node, nodeSizes[0]);
   const auto &childSizes = stats::sizes<T, RNG>({child});
-  EXPECT_EQ((size_t)5, childSizes[0]);
-  EXPECT_EQ("((x1 + x0) + x1)", child.str());
+  EXPECT_NE(nodeSizes[0], childSizes[0]);
+  EXPECT_NE(node.str(), child.str());
 }
 
-/// TODO(renatoutsch)
-TEST(GenerateNewPopulationTest, WorksCorrectly) { EXPECT_EQ(true, true); }
+TEST(MutationTest, OneElementTree) {
+  RNG rng;
+
+  // For params.maxHeight, functions and terminals.
+  Params<T, RNG> params(0, 0, 4, 0, 3, 0, false,
+                        {primitives::sumFn<T, RNG>, primitives::subFn<T, RNG>,
+                         primitives::multFn<T, RNG>, primitives::divFn<T, RNG>,
+                         primitives::logFn<T, RNG>},
+                        {primitives::makeVarTerm<T, RNG>("x0"),
+                         primitives::makeVarTerm<T, RNG>("x1")});
+
+  Node<T, RNG> node(primitives::sumFn<T>(rng));
+  node.setChild(0, primitives::makeVarTerm<T, RNG>("x0")(rng));
+  node.setChild(1, primitives::makeVarTerm<T, RNG>("x1")(rng));
+
+  const auto &nodeSizes = stats::sizes<T, RNG>({node});
+  EXPECT_EQ((size_t)3, nodeSizes[0]);
+  EXPECT_EQ("(x0 + x1)", node.str());
+
+  auto child = mutation(rng, params, node, nodeSizes[0]);
+  const auto &childSizes = stats::sizes<T, RNG>({child});
+  EXPECT_NE(nodeSizes[0], childSizes[0]);
+  EXPECT_NE(node.str(), child.str());
+}
+
+TEST(NewGenerationTest, WorksCorrectly) {
+  RNG rng;
+
+  // For params.maxHeight, functions and terminals.
+  Params<T, RNG> params(
+      0, 10, 60, 5, 7, 0.9, true,
+      {
+          primitives::sumFn<T, RNG>, primitives::subFn<T, RNG>,
+          primitives::multFn<T, RNG>, primitives::divFn<T, RNG>,
+      },
+      {
+          primitives::constTerm<T, RNG>, primitives::makeVarTerm<T, RNG>("x0"),
+      });
+
+  const auto &dataset =
+      parser::loadDataset<T>("compnat/tp1/datasets/keijzer-7-train.csv");
+
+  const auto population = generators::rampedHalfAndHalf(rng, params);
+  const auto stats = stats::Statistics<T, RNG>(population, dataset);
+  const auto[newPopulation, crossoverIndices] =
+      newGeneration(rng, params, population, stats);
+  const auto newStats = stats::Statistics<T, RNG>(
+      newPopulation, dataset, stats.averageFitness, crossoverIndices);
+
+  EXPECT_EQ(population.size(), newPopulation.size());
+
+  // Test elitism.
+  EXPECT_EQ(population[stats.best].str(), newPopulation[0].str());
+}
 
 } // namespace

@@ -22,6 +22,8 @@
 #include <unordered_set>
 #include <vector>
 
+#include <glog/logging.h>
+
 #include "representation.hpp"
 
 namespace stats {
@@ -50,7 +52,6 @@ T fitness(const Node<T, RNG> &individual, const Dataset<T> &dataset) {
 template <typename T, class RNG>
 std::vector<T> fitness(const std::vector<Node<T, RNG>> &population,
                        const Dataset<T> &dataset) {
-  // TODO(renatoutsch): implement this in parallel.
   std::vector<T> results(population.size());
   for (size_t i = 0; i < population.size(); ++i) {
     results[i] = fitness(population[i], dataset);
@@ -64,7 +65,6 @@ std::vector<T> fitness(const std::vector<Node<T, RNG>> &population,
  */
 template <typename T, class RNG>
 std::vector<size_t> sizes(const std::vector<Node<T, RNG>> &population) {
-  // TODO(renatoutsch): implement this in parallel.
   std::vector<size_t> sizes(population.size());
   for (size_t i = 0; i < population.size(); ++i) {
     sizes[i] = population[i].size();
@@ -78,7 +78,6 @@ std::vector<size_t> sizes(const std::vector<Node<T, RNG>> &population) {
  */
 template <typename T, class RNG>
 std::vector<std::string> strs(const std::vector<Node<T, RNG>> &population) {
-  // TODO(renatoutsch): implement this in parallel.
   std::vector<std::string> texts(population.size());
   for (size_t i = 0; i < population.size(); ++i) {
     texts[i] = population[i].str();
@@ -130,6 +129,14 @@ template <typename T, class RNG> struct Statistics {
     calcFitnessStats_();
     calcRepeatedIndividuals_();
     calcCrossoverStats_(averageParentFitness, crossoverIndices);
+
+    LOG(INFO) << "  best individual: " << strs[best];
+    LOG(INFO) << "  best fitness: " << fitness[best];
+    LOG(INFO) << "  average fitness: " << averageFitness;
+    LOG(INFO) << "  worst fitness: " << fitness[worst];
+    LOG(INFO) << "  numRepeatedIndividuals: " << numRepeatedIndividuals;
+    LOG(INFO) << "  numBetter crossover: " << numBetter;
+    LOG(INFO) << "  numWorse crossover: " << numWorse;
   }
 
 private:
