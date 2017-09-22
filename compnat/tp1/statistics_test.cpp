@@ -35,13 +35,13 @@ using testing::ElementsAre;
 std::vector<Node<T, RNG>> generatePopulation() {
   RNG rng(0);
   Node<T, RNG> node1(primitives::sumFn<T>(rng));
-  node1.setChild(0, Node<T, RNG>(primitives::makeVarTerm<T, RNG>("x0")(rng)));
-  node1.setChild(1, Node<T, RNG>(primitives::makeVarTerm<T, RNG>("x1")(rng)));
+  node1.setChild(0, Node<T, RNG>(primitives::makeVarTerm<T, RNG>(0)(rng)));
+  node1.setChild(1, Node<T, RNG>(primitives::makeVarTerm<T, RNG>(1)(rng)));
 
   Node<T, RNG> node2(primitives::logFn<T>(rng));
-  node2.setChild(0, Node<T, RNG>(primitives::makeVarTerm<T, RNG>("x0")(rng)));
+  node2.setChild(0, Node<T, RNG>(primitives::makeVarTerm<T, RNG>(0)(rng)));
 
-  Node<T, RNG> node3(Node<T, RNG>(primitives::makeVarTerm<T, RNG>("x0")(rng)));
+  Node<T, RNG> node3(Node<T, RNG>(primitives::makeVarTerm<T, RNG>(0)(rng)));
 
   return {std::move(node1), std::move(node2), std::move(node3)};
 }
@@ -49,24 +49,40 @@ std::vector<Node<T, RNG>> generatePopulation() {
 TEST(FitnessTest, SingleWorksCorrectly) {
   const auto &population = generatePopulation();
   const Dataset<T> dataset = {
-      {{{"x0", 12}, {"x1", 2}}, 15}, {{{"x0", 15}, {"x1", 4}}, 21},
+      {{12, 2}, 15},
+      {{15, 4}, 21},
   };
 
-  const T fitness = stats::fitness(population[0], dataset);
+  const auto[fitness, _] =
+      stats::fitness(population[0], population[0].size(), 1, 0, dataset);
   ASSERT_FLOAT_EQ(1.5811388, fitness);
 }
 
 TEST(FitnessTest, WorksCorrectly) {
   const auto &population = generatePopulation();
   const Dataset<T> dataset = {
-      {{{"x0", 12}, {"x1", 2}}, 15}, {{{"x0", 15}, {"x1", 4}}, 21},
+      {{12, 2}, 15},
+      {{15, 4}, 21},
   };
 
-  const auto &fitness = stats::fitness(population, dataset);
+  const auto & [ fitness, _ ] =
+      stats::fitness(population, stats::sizes(population), 1, 0, dataset);
   ASSERT_EQ((size_t)3, fitness.size());
   EXPECT_FLOAT_EQ(1.5811388, fitness[0]);
   EXPECT_FLOAT_EQ(14.534055, fitness[1]);
   EXPECT_FLOAT_EQ(4.7434163, fitness[2]);
+}
+
+TEST(FitnessTest, GeneratesExpectedValue) {
+  RNG rng;
+
+  const auto &dataset =
+      parser::loadDataset<T>("compnat/tp1/datasets/keijzer-10-test.csv");
+
+  const auto individual =
+      Node<T, RNG>(primitives::literalTerm<T, RNG>(0.791453)(rng));
+  auto[fitness, rmse] =
+      stats::fitness(individual, individual.size(), 127, 0.1, dataset);
 }
 
 TEST(SizesTest, WorksCorrectly) {
@@ -76,40 +92,32 @@ TEST(SizesTest, WorksCorrectly) {
   ASSERT_THAT(sizes, ElementsAre(3, 2, 1));
 }
 
-TEST(StrsTest, WorksCorrectly) {
-  const auto &population = generatePopulation();
-
-  const auto &strs = stats::strs(population);
-  ASSERT_THAT(strs, ElementsAre("(x0 + x1)", "log2(x0)", "x0"));
-}
-
 TEST(StatisticsTest, SingleGenerationPerformanceBenchmark) {
   const auto &dataset =
       parser::loadDataset<T>("compnat/tp1/datasets/unit_test.csv");
 
   // Params for a big test.
   Params<T, RNG> params( // Improve formatting
-      0, 1, 600, 7, 7, 0.9, false,
+      0, 1, 600, 7, 7, 0.1, 0.9, false,
       {
-          primitives::sumFn<T, RNG>, primitives::subFn<T, RNG>,
-          primitives::multFn<T, RNG>, primitives::divFn<T, RNG>,
+          primitives::sumFn<T, RNG>,
+          primitives::subFn<T, RNG>,
+          primitives::multFn<T, RNG>,
+          primitives::divFn<T, RNG>,
       },
       {
-          primitives::constTerm<T, RNG>, primitives::makeVarTerm<T, RNG>("x0"),
-          primitives::makeVarTerm<T, RNG>("x1"),
-          primitives::makeVarTerm<T, RNG>("x2"),
-          primitives::makeVarTerm<T, RNG>("x3"),
-          /* primitives::makeVarTerm<T, RNG>("x4"), */
-          /* primitives::makeVarTerm<T, RNG>("x5"), */
-          /* primitives::makeVarTerm<T, RNG>("x6"), */
-          /* primitives::makeVarTerm<T, RNG>("x7"), */
+          primitives::constTerm<T, RNG>,
+          primitives::makeVarTerm<T, RNG>(0),
+          primitives::makeVarTerm<T, RNG>(1),
+          primitives::makeVarTerm<T, RNG>(2),
+          primitives::makeVarTerm<T, RNG>(3),
       });
 
   RNG rng;
   const auto &population = generators::rampedHalfAndHalf(rng, params);
   EXPECT_EQ((size_t)600, population.size());
 
-  const auto &stats = Statistics<T, RNG>(population, dataset);
+  const auto &stats = Statistics<T, RNG>(params, population, dataset);
   EXPECT_EQ((size_t)600, stats.fitness.size());
   EXPECT_EQ((size_t)600, stats.sizes.size());
 }

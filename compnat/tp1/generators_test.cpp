@@ -41,14 +41,14 @@ std::vector<PrimitiveFn<T, RNG>> getFunctions() {
 }
 std::vector<PrimitiveFn<T, RNG>> getTerminals() {
   return {
-      primitives::makeVarTerm<T, RNG>("x0"),
-      primitives::makeVarTerm<T, RNG>("x1"),
+      primitives::makeVarTerm<T, RNG>(0),
+      primitives::makeVarTerm<T, RNG>(1),
   };
 }
 
 void fillChildrenWithVars(RNG &rng, Node<T, RNG> &node) {
   for (size_t i = 0; i < node.numChildren(); ++i) {
-    node.setChild(i, primitives::makeVarTerm<T, RNG>(strCat("x", i))(rng));
+    node.setChild(i, primitives::makeVarTerm<T, RNG>(i)(rng));
   }
 }
 
@@ -72,7 +72,7 @@ TEST(RandomPrimitiveTest, MultiplePrimitivesWorksCorrectly) {
 
   auto node1 = Node<T, RNG>(randomPrimitive(rng, functions, terminals));
   for (size_t i = 0; i < node1.numChildren(); ++i) {
-    node1.setChild(0, randomPrimitive(rng, terminals));
+    node1.setChild(i, randomPrimitive(rng, terminals));
   }
 
   if (node1.numChildren()) {
@@ -83,7 +83,7 @@ TEST(RandomPrimitiveTest, MultiplePrimitivesWorksCorrectly) {
 
   auto node2 = Node<T, RNG>(randomPrimitive(rng, functions, terminals));
   for (size_t i = 0; i < node2.numChildren(); ++i) {
-    node2.setChild(0, randomPrimitive(rng, terminals));
+    node2.setChild(i, randomPrimitive(rng, terminals));
   }
 
   if (node2.numChildren()) {
@@ -124,7 +124,7 @@ TEST(RampedHalfAndHalfTest, WorksCorrectly) {
   const size_t maxHeight = 7;
 
   RNG rng;
-  Params<T, RNG> params(0, 100, populationSize, 7, maxHeight, 0.8, false,
+  Params<T, RNG> params(0, 100, populationSize, 7, maxHeight, 0.1, 0.8, false,
                         getFunctions(), getTerminals());
   auto nodes = rampedHalfAndHalf<T, RNG>(rng, params);
   EXPECT_EQ(populationSize, nodes.size());

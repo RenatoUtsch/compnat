@@ -33,14 +33,17 @@ TEST(NewGenerationTest, WorksCorrectly) {
   RNG rng;
 
   // For params.maxHeight, functions and terminals.
-  Params<T, RNG> params(
-      0, 10, 60, 5, 7, 0.9, false,
+  Params<T, RNG> params( // Keep formatting
+      0, 10, 60, 5, 7, 0.1, 0.9, false,
       {
-          primitives::sumFn<T, RNG>, primitives::subFn<T, RNG>,
-          primitives::multFn<T, RNG>, primitives::divFn<T, RNG>,
+          primitives::sumFn<T, RNG>,
+          primitives::subFn<T, RNG>,
+          primitives::multFn<T, RNG>,
+          primitives::divFn<T, RNG>,
       },
       {
-          primitives::constTerm<T, RNG>, primitives::makeVarTerm<T, RNG>("x0"),
+          primitives::constTerm<T, RNG>,
+          primitives::makeVarTerm<T, RNG>(0),
       });
 
   const auto &trainDataset =

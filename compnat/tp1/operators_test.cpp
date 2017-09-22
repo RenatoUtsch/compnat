@@ -43,12 +43,12 @@ TEST(CrossoverTest, WorksCorrectly) {
   RNG rng;
 
   Node<T, RNG> node0(primitives::sumFn<T>(rng));
-  node0.setChild(0, primitives::makeVarTerm<T, RNG>("x0")(rng));
-  node0.setChild(1, primitives::makeVarTerm<T, RNG>("x1")(rng));
+  node0.setChild(0, primitives::makeVarTerm<T, RNG>(0)(rng));
+  node0.setChild(1, primitives::makeVarTerm<T, RNG>(1)(rng));
 
   Node<T, RNG> node1(primitives::logFn<T>(rng));
   node1.setChild(0, primitives::logFn<T, RNG>(rng));
-  node1.mutableChild(0).setChild(0, primitives::makeVarTerm<T, RNG>("x0")(rng));
+  node1.mutableChild(0).setChild(0, primitives::makeVarTerm<T, RNG>(0)(rng));
 
   const auto &nodeSizes = stats::sizes<T, RNG>({node0, node1});
   EXPECT_EQ((size_t)3, nodeSizes[0]);
@@ -70,16 +70,16 @@ TEST(MutationTest, WorksCorrectly) {
   RNG rng;
 
   // For params.maxHeight, functions and terminals.
-  Params<T, RNG> params(0, 0, 4, 0, 3, 0, false,
-                        {primitives::sumFn<T, RNG>, primitives::subFn<T, RNG>,
-                         primitives::multFn<T, RNG>, primitives::divFn<T, RNG>,
-                         primitives::logFn<T, RNG>},
-                        {primitives::makeVarTerm<T, RNG>("x0"),
-                         primitives::makeVarTerm<T, RNG>("x1")});
+  Params<T, RNG> params(
+      0, 0, 4, 0, 3, 0.1, 0, false,
+      {primitives::sumFn<T, RNG>, primitives::subFn<T, RNG>,
+       primitives::multFn<T, RNG>, primitives::divFn<T, RNG>,
+       primitives::logFn<T, RNG>},
+      {primitives::makeVarTerm<T, RNG>(0), primitives::makeVarTerm<T, RNG>(1)});
 
   Node<T, RNG> node(primitives::sumFn<T>(rng));
-  node.setChild(0, primitives::makeVarTerm<T, RNG>("x0")(rng));
-  node.setChild(1, primitives::makeVarTerm<T, RNG>("x1")(rng));
+  node.setChild(0, primitives::makeVarTerm<T, RNG>(0)(rng));
+  node.setChild(1, primitives::makeVarTerm<T, RNG>(1)(rng));
 
   const auto &nodeSizes = stats::sizes<T, RNG>({node});
   EXPECT_EQ((size_t)3, nodeSizes[0]);
@@ -95,16 +95,16 @@ TEST(MutationTest, OneElementTree) {
   RNG rng;
 
   // For params.maxHeight, functions and terminals.
-  Params<T, RNG> params(0, 0, 4, 0, 3, 0, false,
-                        {primitives::sumFn<T, RNG>, primitives::subFn<T, RNG>,
-                         primitives::multFn<T, RNG>, primitives::divFn<T, RNG>,
-                         primitives::logFn<T, RNG>},
-                        {primitives::makeVarTerm<T, RNG>("x0"),
-                         primitives::makeVarTerm<T, RNG>("x1")});
+  Params<T, RNG> params(
+      0, 0, 4, 0, 3, 0.1, 0, false,
+      {primitives::sumFn<T, RNG>, primitives::subFn<T, RNG>,
+       primitives::multFn<T, RNG>, primitives::divFn<T, RNG>,
+       primitives::logFn<T, RNG>},
+      {primitives::makeVarTerm<T, RNG>(0), primitives::makeVarTerm<T, RNG>(1)});
 
   Node<T, RNG> node(primitives::sumFn<T>(rng));
-  node.setChild(0, primitives::makeVarTerm<T, RNG>("x0")(rng));
-  node.setChild(1, primitives::makeVarTerm<T, RNG>("x1")(rng));
+  node.setChild(0, primitives::makeVarTerm<T, RNG>(0)(rng));
+  node.setChild(1, primitives::makeVarTerm<T, RNG>(1)(rng));
 
   const auto &nodeSizes = stats::sizes<T, RNG>({node});
   EXPECT_EQ((size_t)3, nodeSizes[0]);
@@ -120,25 +120,27 @@ TEST(NewGenerationTest, WorksCorrectly) {
   RNG rng;
 
   // For params.maxHeight, functions and terminals.
-  Params<T, RNG> params(
-      0, 10, 60, 5, 7, 0.9, true,
-      {
-          primitives::sumFn<T, RNG>, primitives::subFn<T, RNG>,
-          primitives::multFn<T, RNG>, primitives::divFn<T, RNG>,
-      },
-      {
-          primitives::constTerm<T, RNG>, primitives::makeVarTerm<T, RNG>("x0"),
-      });
+  Params<T, RNG> params(0, 10, 60, 5, 7, 0.1, 0.9, true,
+                        {
+                            primitives::sumFn<T, RNG>,
+                            primitives::subFn<T, RNG>,
+                            primitives::multFn<T, RNG>,
+                            primitives::divFn<T, RNG>,
+                        },
+                        {
+                            primitives::constTerm<T, RNG>,
+                            primitives::makeVarTerm<T, RNG>(0),
+                        });
 
   const auto &dataset =
       parser::loadDataset<T>("compnat/tp1/datasets/keijzer-7-train.csv");
 
   const auto population = generators::rampedHalfAndHalf(rng, params);
-  const auto stats = stats::Statistics<T, RNG>(population, dataset);
+  const auto stats = stats::Statistics<T, RNG>(params, population, dataset);
   const auto[newPopulation, crossoverIndices] =
       newGeneration(rng, params, population, stats);
   const auto newStats = stats::Statistics<T, RNG>(
-      newPopulation, dataset, stats.averageFitness, crossoverIndices);
+      params, newPopulation, dataset, stats.averageFitness, crossoverIndices);
 
   EXPECT_EQ(population.size(), newPopulation.size());
 

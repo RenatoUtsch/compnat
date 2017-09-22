@@ -54,9 +54,9 @@ template <typename T> Dataset<T> loadDataset(const std::string &filename) {
     const auto &tokens = splitLine(line, ',');
     const size_t numInputs = tokens.size() - 1;
 
-    EvalInput<T> input;
+    EvalInput<T> input(numInputs);
     for (size_t i = 0; i < numInputs; ++i) {
-      utils::strSplit(tokens[i], input[utils::strCat('x', i)]);
+      utils::strSplit(tokens[i], input[i]);
     }
 
     T expectedValue;

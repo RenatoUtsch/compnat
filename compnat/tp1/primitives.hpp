@@ -108,16 +108,32 @@ template <typename T, class RNG> Primitive<T, RNG> constTerm(RNG &rng) {
       });
 }
 
+/// Literal terminal. Returns the given input value.
+template <typename T, class RNG>
+std::function<Primitive<T, RNG>(RNG &)> literalTerm(T value) {
+  return [value]([[maybe_unused]] auto &rng) {
+    return Primitive<T, RNG>( // Keep formatting
+        0,
+        [value]([[maybe_unused]] const auto &input,
+                [[maybe_unused]] const auto &children) { return value; },
+        [value]([[maybe_unused]] const auto &children) {
+          return utils::strCat(value);
+        });
+  };
+}
+
 /// Variable terminal. Returns the value of the given variable.
 template <typename T, class RNG>
-std::function<Primitive<T, RNG>(RNG &rng)> makeVarTerm(const std::string &var) {
+std::function<Primitive<T, RNG>(RNG &)> makeVarTerm(size_t var) {
   return [var]([[maybe_unused]] auto &rng) {
     return Primitive<T, RNG>( // Keep formatting
         0,
         [var](const auto &input, [[maybe_unused]] const auto &children) {
-          return input.at(var);
+          return input[var];
         },
-        [var]([[maybe_unused]] const auto &children) { return var; });
+        [var]([[maybe_unused]] const auto &children) {
+          return utils::strCat("x", var);
+        });
   };
 }
 

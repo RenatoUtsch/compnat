@@ -31,10 +31,18 @@ namespace stats {
 /**
  * Calculates the fitness of an individual given a set of input data.
  * This is implemented as the Root-mean-square deviation.
+ * @param individual The individual used when calculating the fitness.
+ * @param size The size of the individual.
+ * @param maxElements Maximum number of elements in the tree.
+ * @param bloatFactor Multiplier to control bloating.
+ * @param dataset Dataset to use to calculate the fitness.
+ * @return A pair of the fitness and the RMSE.
  */
 template <typename T, class RNG>
-T fitness(const Node<T, RNG> &individual, const Dataset<T> &dataset) {
-  T error = 0;
+std::pair<double, double> fitness(const Node<T, RNG> &individual, size_t size,
+                                  size_t maxElements, double bloatFactor,
+                                  const Dataset<T> &dataset) {
+  double error = 0;
   for (const auto &sample : dataset) {
     // Unpack outside the loop because clang on MacOS can't compile it in the
     // loop.
@@ -42,22 +50,34 @@ T fitness(const Node<T, RNG> &individual, const Dataset<T> &dataset) {
     error += std::pow(individual.eval(input) - expected, 2);
   }
 
-  return std::sqrt(error / dataset.size());
+  const double rmse = std::sqrt(error / dataset.size());
+  return {rmse + bloatFactor * std::pow((double)size / maxElements, 2), rmse};
 }
 
 /**
  * Calculates the fitness for all population and returns it in a vector.
- * This vector is in the same order of the population vector.
+ * This is implemented as the Root-mean-square deviation.
+ * @param population The population used when calculating the fitness.
+ * @param sizes The size of each individual in the population.
+ * @param maxElements The number of elements the trees should have.
+ * @param bloatFactor Multiplier to control bloating.
+ * @param dataset The dataset used to calculate the fitness.
+ * @return Vector of fitness and RMSE.
  */
 template <typename T, class RNG>
-std::vector<T> fitness(const std::vector<Node<T, RNG>> &population,
-                       const Dataset<T> &dataset) {
-  std::vector<T> results(population.size());
+std::pair<std::vector<double>, std::vector<double>>
+fitness(const std::vector<Node<T, RNG>> &population,
+        const std::vector<size_t> &sizes, size_t maxElements,
+        double bloatFactor, const Dataset<T> &dataset) {
+
+  std::vector<double> results(population.size());
+  std::vector<double> rmse(population.size());
   for (size_t i = 0; i < population.size(); ++i) {
-    results[i] = fitness(population[i], dataset);
+    std::tie(results[i], rmse[i]) =
+        fitness(population[i], sizes[i], maxElements, bloatFactor, dataset);
   }
 
-  return results;
+  return {results, rmse};
 }
 
 /**
@@ -74,27 +94,17 @@ std::vector<size_t> sizes(const std::vector<Node<T, RNG>> &population) {
 }
 
 /**
- * Converts all the population to string version.
- */
-template <typename T, class RNG>
-std::vector<std::string> strs(const std::vector<Node<T, RNG>> &population) {
-  std::vector<std::string> texts(population.size());
-  for (size_t i = 0; i < population.size(); ++i) {
-    texts[i] = population[i].str();
-  }
-
-  return texts;
-}
-
-/**
  * Stores the statistics of each generation.
  */
 template <typename T, class RNG> struct Statistics {
-  /// Fitness of all individuals in the generation.
-  std::vector<T> fitness;
-
   /// Sizes of all individuals in the generation.
   std::vector<size_t> sizes;
+
+  /// Fitness of all individuals in the generation.
+  std::vector<double> fitness;
+
+  /// RMSE of all individuals in the generation.
+  std::vector<double> rmse;
 
   /// Index of the best individual in the generation.
   size_t best;
@@ -122,12 +132,15 @@ template <typename T, class RNG> struct Statistics {
   /// String representation of the best individual.
   std::string bestStr;
 
-  Statistics(const std::vector<Node<T, RNG>> &population,
+  Statistics(const Params<T, RNG> &params,
+             const std::vector<Node<T, RNG>> &population,
              const Dataset<T> &dataset, const T averageParentFitness = 0,
              const std::vector<size_t> &crossoverIndices = {})
-      : fitness(::stats::fitness(population, dataset)),
-        sizes(::stats::sizes(population)), best(0), worst(0), averageFitness(0),
+      : sizes(::stats::sizes(population)), best(0), worst(0), averageFitness(0),
         averageSize(0), numRepeatedIndividuals(0), numBetter(0), numWorse(0) {
+    std::tie(fitness, rmse) = ::stats::fitness(
+        population, sizes, params.maxElements, params.bloatFactor, dataset);
+
     calcFitnessStats_();
     calcRepeatedIndividuals_();
     calcAverageSize_();
@@ -136,7 +149,9 @@ template <typename T, class RNG> struct Statistics {
     bestStr = population[best].str();
 
     LOG(INFO) << "  best fitness: " << fitness[best];
+    LOG(INFO) << "  best rmse: " << rmse[best];
     LOG(INFO) << "  worst fitness: " << fitness[worst];
+    LOG(INFO) << "  worst rmse: " << rmse[worst];
     LOG(INFO) << "  averageFitness: " << averageFitness;
     LOG(INFO) << "  averageSize: " << averageSize;
     LOG(INFO) << "  numRepeatedIndividuals: " << numRepeatedIndividuals;

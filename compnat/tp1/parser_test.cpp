@@ -40,18 +40,18 @@ TEST(LoadDatasetTest, WorksCorrectly) {
 
   auto & [ input0, expected0 ] = dataset[0];
   ASSERT_EQ((size_t)4, input0.size());
-  ASSERT_FLOAT_EQ(4, input0.at("x0"));
-  ASSERT_FLOAT_EQ(5, input0.at("x1"));
-  ASSERT_FLOAT_EQ(3.6, input0.at("x2"));
-  ASSERT_FLOAT_EQ(7.8, input0.at("x3"));
+  ASSERT_FLOAT_EQ(4, input0[0]);
+  ASSERT_FLOAT_EQ(5, input0[1]);
+  ASSERT_FLOAT_EQ(3.6, input0[2]);
+  ASSERT_FLOAT_EQ(7.8, input0[3]);
   ASSERT_FLOAT_EQ(900, expected0);
 
   auto & [ input1, expected1 ] = dataset[1];
   ASSERT_EQ((size_t)4, input1.size());
-  ASSERT_FLOAT_EQ(6, input1.at("x0"));
-  ASSERT_FLOAT_EQ(3.3, input1.at("x1"));
-  ASSERT_FLOAT_EQ(4, input1.at("x2"));
-  ASSERT_FLOAT_EQ(5, input1.at("x3"));
+  ASSERT_FLOAT_EQ(6, input1[0]);
+  ASSERT_FLOAT_EQ(3.3, input1[1]);
+  ASSERT_FLOAT_EQ(4, input1[2]);
+  ASSERT_FLOAT_EQ(5, input1[3]);
   ASSERT_FLOAT_EQ(-800.15, expected1);
 }
 

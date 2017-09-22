@@ -31,6 +31,7 @@ DEFINE_int32(num_generations, 50, "Number of generations to run.");
 DEFINE_int32(population_size, 100, "Size of the population.");
 DEFINE_int32(tournament_size, 7, "Size of the tournament.");
 DEFINE_int32(max_height, 7, "Maximum tree height.");
+DEFINE_double(bloat_factor, 0.1, "Multiplier to control bloating.");
 DEFINE_double(crossover_prob, 0.9,
               "Crossover probability. Will use mutation otherwise.");
 DEFINE_bool(elitism, false, "Whether to use elitism or not.");
@@ -52,22 +53,24 @@ int main(int argc, char **argv) {
   const auto &testDataset = parser::loadDataset<T>(FLAGS_dataset_test);
 
   const std::vector<PrimitiveFn<T, RNG>> functions = {
-      primitives::sumFn<T, RNG>, primitives::subFn<T, RNG>,
-      primitives::multFn<T, RNG>, primitives::divFn<T, RNG>,
+      primitives::sumFn<T, RNG>,
+      primitives::subFn<T, RNG>,
+      primitives::multFn<T, RNG>,
+      primitives::divFn<T, RNG>,
   };
 
   // Add the correct number of variable terminals.
   std::vector<PrimitiveFn<T, RNG>> terminals;
   terminals.push_back(primitives::constTerm<T, RNG>);
-  const auto &datasetSample = trainDataset[0].first;
-  for (const auto & [ key, _ ] : datasetSample) {
-    terminals.push_back(primitives::makeVarTerm<T, RNG>(key));
+  const auto &datasetInput = trainDataset[0].first;
+  for (size_t i = 0; i < datasetInput.size(); ++i) {
+    terminals.push_back(primitives::makeVarTerm<T, RNG>(i));
   }
 
-  Params<T, RNG> params(FLAGS_seed, FLAGS_num_generations,
-                        FLAGS_population_size, FLAGS_tournament_size,
-                        FLAGS_max_height, FLAGS_crossover_prob, FLAGS_elitism,
-                        functions, terminals);
+  Params<T, RNG> params(
+      FLAGS_seed, FLAGS_num_generations, FLAGS_population_size,
+      FLAGS_tournament_size, FLAGS_max_height, FLAGS_bloat_factor,
+      FLAGS_crossover_prob, FLAGS_elitism, functions, terminals);
 
   simulation::simulate(params, trainDataset, testDataset);
 

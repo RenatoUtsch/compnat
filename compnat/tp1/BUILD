@@ -20,6 +20,7 @@ cc_binary(
     name = "tp1",
     srcs = ["tp1.cpp"],
     copts = COMPNAT_CPP_COPTS,
+    linkopts = ["-lprofiler"],
     deps = [
         ":parser",
         ":primitives",
