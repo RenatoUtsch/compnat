@@ -35,17 +35,15 @@ void simulate(const Params<T, RNG> &params, const Dataset<T> &trainDataset,
   LOG(INFO) << "Generation 0";
   auto population = generators::rampedHalfAndHalf(rng, params);
   auto stats = stats::Statistics<T, RNG>(params, population, trainDataset);
-  std::vector<size_t> crossoverIndices;
-  for (size_t i = 1; i < params.numGenerations; ++i) {
-    LOG(INFO) << "";
+  stats::ImprovementMetadata metadata;
+  for (size_t i = 1; i <= params.numGenerations; ++i) {
     LOG(INFO) << "Generation " << i;
-    std::tie(population, crossoverIndices) =
+    std::tie(population, metadata) =
         operators::newGeneration(rng, params, population, stats);
-    stats = stats::Statistics<T, RNG>(params, population, trainDataset,
-                                      stats.averageFitness, crossoverIndices);
+    stats =
+        stats::Statistics<T, RNG>(params, population, trainDataset, metadata);
   }
 
-  LOG(INFO) << "";
   LOG(INFO) << "Test statistics";
   auto testStats = stats::Statistics<T, RNG>(params, population, testDataset);
 }

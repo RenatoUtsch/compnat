@@ -50,6 +50,17 @@ template <typename... Args> std::string strCat(const Args &... args) {
   return ss.str();
 }
 
+/// Padded strCat, fills with spaces until size.
+template <typename... Args>
+std::string paddedStrCat(size_t size, const Args &... args) {
+  std::string str = strCat(args...);
+  if (str.size() < size) {
+    str += std::string(size - str.size(), ' ');
+  }
+
+  return str;
+}
+
 template <typename T> void strSplitter_(std::istringstream &iss, T &t) {
   iss >> t;
 }
@@ -66,6 +77,7 @@ void strSplit(const std::string &str, Args &... args) {
   std::istringstream iss(str);
   strSplitter_(iss, args...);
 }
+
 } // namespace utils
 
 #endif // !COMPNAT_TP1_UTILS_HPP

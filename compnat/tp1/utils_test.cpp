@@ -19,6 +19,7 @@
 #include <gtest/gtest.h>
 
 namespace {
+using utils::paddedStrCat;
 using utils::safeDiv;
 using utils::strCat;
 using utils::strSplit;
@@ -35,6 +36,10 @@ TEST(SafeDivTest, ByZeroDivision) {
 
 TEST(StrCatTest, WorksCorrectly) {
   EXPECT_EQ("abc123D3.14", strCat("abc", 123, 'D', 3.14));
+}
+
+TEST(PaddedStrCatTest, WorksCorrectly) {
+  EXPECT_EQ("abc123D3.14         ", paddedStrCat(20, "abc", 123, 'D', 3.14));
 }
 
 TEST(StrSplitTest, WorksCorrectly) {

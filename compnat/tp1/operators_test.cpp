@@ -137,10 +137,10 @@ TEST(NewGenerationTest, WorksCorrectly) {
 
   const auto population = generators::rampedHalfAndHalf(rng, params);
   const auto stats = stats::Statistics<T, RNG>(params, population, dataset);
-  const auto[newPopulation, crossoverIndices] =
+  const auto[newPopulation, improvementMetadata] =
       newGeneration(rng, params, population, stats);
-  const auto newStats = stats::Statistics<T, RNG>(
-      params, newPopulation, dataset, stats.averageFitness, crossoverIndices);
+  const auto newStats = stats::Statistics<T, RNG>(params, newPopulation,
+                                                  dataset, improvementMetadata);
 
   EXPECT_EQ(population.size(), newPopulation.size());
 

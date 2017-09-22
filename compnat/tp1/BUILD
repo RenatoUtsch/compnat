@@ -178,6 +178,7 @@ cc_library(
     copts = COMPNAT_CPP_COPTS,
     deps = [
         ":representation",
+        ":utils",
         "//third_party:glog",
     ],
 )

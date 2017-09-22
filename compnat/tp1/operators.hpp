@@ -127,44 +127,51 @@ Node<T, RNG> mutation(RNG &rng, const Params<T, RNG> &params,
  * @param params Genetic programming params.
  * @param population Parent generation.
  * @param statistics Statistics of the parent generation.
- * @return Pair containing the new population and the indices of crossover
- *   children.
+ * @return Tuple containing the new population, the indices of crossover
+ *   children and indices of mutation children.
  */
 template <typename T, class RNG>
-std::pair<std::vector<Node<T, RNG>>, std::vector<size_t>>
+std::pair<std::vector<Node<T, RNG>>, stats::ImprovementMetadata>
 newGeneration(RNG &rng, const Params<T, RNG> &params,
               const std::vector<Node<T, RNG>> &parentPopulation,
               const stats::Statistics<T, RNG> &parentStats) {
   CHECK(params.crossoverProb >= 0.0 && params.crossoverProb < 1.0);
 
+  size_t i = 0;
   std::vector<Node<T, RNG>> newPopulation;
   if (params.elitism) {
     // Make a copy.
     newPopulation.push_back(parentPopulation[parentStats.best]);
+    i++;
   }
 
-  std::uniform_real_distribution<> distr(0.0, 1.0);
-  std::vector<size_t> crossoverIndices;
-  size_t i = 0;
+  std::uniform_real_distribution<double> distr(0.0, 1.0);
+  stats::ImprovementMetadata metadata;
   while (newPopulation.size() < parentPopulation.size()) {
     const size_t p1 =
         tournamentSelection(rng, params.tournamentSize, parentStats.fitness);
+    const auto p1Fitness = parentStats.fitness[p1];
     const size_t p2 =
         tournamentSelection(rng, params.tournamentSize, parentStats.fitness);
+    const auto p2Fitness = parentStats.fitness[p2];
 
     if (distr(rng) <= params.crossoverProb) { // Crossover
       auto[c1, c2] = crossover(rng, parentPopulation[p1], parentStats.sizes[p1],
                                parentPopulation[p2], parentStats.sizes[p2]);
       newPopulation.push_back(std::move(c1));
       newPopulation.push_back(std::move(c2));
-      crossoverIndices.push_back(i++);
-      crossoverIndices.push_back(i++);
+
+      const auto avgParentFitness = (p1Fitness + p2Fitness) / 2.0;
+      metadata.crossoverAvgParentFitness.emplace_back(i++, avgParentFitness);
+      metadata.crossoverAvgParentFitness.emplace_back(i++, avgParentFitness);
     } else { // Mutation
       newPopulation.push_back(
           mutation(rng, params, parentPopulation[p1], parentStats.sizes[p1]));
       newPopulation.push_back(
           mutation(rng, params, parentPopulation[p2], parentStats.sizes[p2]));
-      i += 2;
+
+      metadata.mutationParentFitness.emplace_back(i++, p1Fitness);
+      metadata.mutationParentFitness.emplace_back(i++, p2Fitness);
     }
   }
 
@@ -174,7 +181,7 @@ newGeneration(RNG &rng, const Params<T, RNG> &params,
     CHECK(newPopulation.size() == parentPopulation.size() + 1);
     newPopulation.pop_back();
   }
-  return {newPopulation, crossoverIndices};
+  return {newPopulation, metadata};
 }
 
 } // namespace operators
