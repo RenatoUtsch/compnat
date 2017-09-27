@@ -77,6 +77,9 @@ template <typename T, class RNG> struct Params {
   /// RNG seed.
   unsigned seed;
 
+  /// Number of instances.
+  size_t numInstances;
+
   /// Number of generations to run.
   size_t numGenerations;
 

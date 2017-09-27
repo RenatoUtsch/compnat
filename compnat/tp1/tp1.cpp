@@ -27,6 +27,7 @@
 DEFINE_string(dataset_train, "", "File containing the train dataset.");
 DEFINE_string(dataset_test, "", "File containing the test dataset.");
 DEFINE_int32(seed, -1, "Initial seed (-1 to select at random).");
+DEFINE_int32(num_instances, 30, "Number of instances.");
 DEFINE_int32(num_generations, 50, "Number of generations to run.");
 DEFINE_int32(population_size, 100, "Size of the population.");
 DEFINE_int32(tournament_size, 7, "Size of the tournament.");
