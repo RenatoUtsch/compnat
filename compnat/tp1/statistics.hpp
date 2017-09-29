@@ -25,6 +25,7 @@
 #include <glog/logging.h>
 
 #include "representation.hpp"
+#include "threading.hpp"
 #include "utils.hpp"
 
 namespace stats {
@@ -53,19 +54,20 @@ double fitness(const Node<T, RNG> &individual, const Dataset<T> &dataset) {
 /**
  * Calculates the fitness for all population and returns it in a vector.
  * This is implemented as the Root-mean-square deviation.
+ * @param pool Thread pool.
  * @param population The population used when calculating the fitness.
  * @param sizes The size of each individual in the population.
  * @param dataset The dataset used to calculate the fitness.
  * @return Vector of fitness.
  */
 template <typename T, class RNG>
-std::vector<double> fitness(const std::vector<Node<T, RNG>> &population,
+std::vector<double> fitness(threading::ThreadPool &pool,
+                            const std::vector<Node<T, RNG>> &population,
                             const Dataset<T> &dataset) {
-
   std::vector<double> results(population.size());
-  for (size_t i = 0; i < population.size(); ++i) {
+  pool.run(0, population.size(), [&results, &population, &dataset](size_t i) {
     results[i] = fitness(population[i], dataset);
-  }
+  });
 
   return results;
 }
@@ -134,10 +136,11 @@ template <typename T, class RNG> struct Statistics {
   /// String representation of the best individual.
   std::string bestStr;
 
-  Statistics(const std::vector<Node<T, RNG>> &population,
+  template <class ThreadPool>
+  Statistics(ThreadPool &pool, const std::vector<Node<T, RNG>> &population,
              const Dataset<T> &dataset,
              const ImprovementMetadata &metadata = {})
-      : fitness(::stats::fitness(population, dataset)),
+      : fitness(::stats::fitness(pool, population, dataset)),
         sizes(::stats::sizes(population)), best(0), worst(0), averageFitness(0),
         averageSize(0), numRepeatedIndividuals(0), numCrossoverBetter(0),
         numCrossoverWorse(0), numMutationBetter(0), numMutationWorse(0) {
