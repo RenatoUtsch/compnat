@@ -53,8 +53,7 @@ TEST(FitnessTest, SingleWorksCorrectly) {
       {{15, 4}, 21},
   };
 
-  const auto[fitness, _] =
-      stats::fitness(population[0], population[0].size(), 1, 0, dataset);
+  const auto fitness = stats::fitness(population[0], dataset);
   ASSERT_FLOAT_EQ(1.5811388, fitness);
 }
 
@@ -65,8 +64,7 @@ TEST(FitnessTest, WorksCorrectly) {
       {{15, 4}, 21},
   };
 
-  const auto & [ fitness, _ ] =
-      stats::fitness(population, stats::sizes(population), 1, 0, dataset);
+  const auto fitness = stats::fitness(population, dataset);
   ASSERT_EQ((size_t)3, fitness.size());
   EXPECT_FLOAT_EQ(1.5811388, fitness[0]);
   EXPECT_FLOAT_EQ(14.534055, fitness[1]);
@@ -81,8 +79,8 @@ TEST(FitnessTest, GeneratesExpectedValue) {
 
   const auto individual =
       Node<T, RNG>(primitives::literalTerm<T, RNG>(0.791453)(rng));
-  auto[fitness, rmse] =
-      stats::fitness(individual, individual.size(), 127, 0.1, dataset);
+  const auto fitness = stats::fitness(individual, dataset);
+  EXPECT_FLOAT_EQ(0.089933448, fitness);
 }
 
 TEST(SizesTest, WorksCorrectly) {
@@ -98,7 +96,7 @@ TEST(StatisticsTest, SingleGenerationPerformanceBenchmark) {
 
   // Params for a big test.
   Params<T, RNG> params( // Improve formatting
-      0, 1, 600, 7, 7, 0.1, 0.9, false,
+      0, 1, 600, 7, 7, 0.9, false,
       {
           primitives::sumFn<T, RNG>,
           primitives::subFn<T, RNG>,
@@ -117,7 +115,7 @@ TEST(StatisticsTest, SingleGenerationPerformanceBenchmark) {
   const auto &population = generators::rampedHalfAndHalf(rng, params);
   EXPECT_EQ((size_t)600, population.size());
 
-  const auto &stats = Statistics<T, RNG>(params, population, dataset);
+  const auto &stats = Statistics<T, RNG>(population, dataset);
   EXPECT_EQ((size_t)600, stats.fitness.size());
   EXPECT_EQ((size_t)600, stats.sizes.size());
 }

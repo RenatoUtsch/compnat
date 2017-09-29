@@ -17,7 +17,6 @@
 #ifndef COMPNAT_TP1_REPRESENTATION_HPP
 #define COMPNAT_TP1_REPRESENTATION_HPP
 
-#include <cmath>
 #include <functional>
 #include <string>
 #include <vector>
@@ -92,12 +91,6 @@ template <typename T, class RNG> struct Params {
   /// Maximum tree height.
   size_t maxHeight;
 
-  /// Maximum number of elements in the tree (aka 2^maxHeight).
-  size_t maxElements;
-
-  /// Multiplier to control bloating.
-  double bloatFactor;
-
   /// Crossover probability.
   double crossoverProb;
 
@@ -111,15 +104,13 @@ template <typename T, class RNG> struct Params {
   std::vector<PrimitiveFn<T, RNG>> terminals;
 
   Params(unsigned seed_, size_t numGenerations_, size_t populationSize_,
-         size_t tournamentSize_, size_t maxHeight_, double bloatFactor_,
-         double crossoverProb_, bool elitism_,
-         const std::vector<PrimitiveFn<T, RNG>> &functions_,
+         size_t tournamentSize_, size_t maxHeight_, double crossoverProb_,
+         bool elitism_, const std::vector<PrimitiveFn<T, RNG>> &functions_,
          const std::vector<PrimitiveFn<T, RNG>> &terminals_)
       : seed(seed_), numGenerations(numGenerations_),
         populationSize(populationSize_), tournamentSize(tournamentSize_),
-        maxHeight(maxHeight_), maxElements(std::pow(2, maxHeight) - 1),
-        bloatFactor(bloatFactor_), crossoverProb(crossoverProb_),
-        elitism(elitism_), functions(functions_), terminals(terminals_) {
+        maxHeight(maxHeight_), crossoverProb(crossoverProb_), elitism(elitism_),
+        functions(functions_), terminals(terminals_) {
     if (populationSize < maxHeight - 1) {
       LOG(WARNING) << "params: populationSize changed to maxHeight - 1";
       populationSize = maxHeight - 1;

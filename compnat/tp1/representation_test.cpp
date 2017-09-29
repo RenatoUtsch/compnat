@@ -28,7 +28,7 @@ using RNG = std::mt19937;
 
 TEST(ParamsTest, WorksCorrectly) {
   Params<T, RNG> params(
-      42, 50, 8, 6, 5, 0.1, 0.5, false, {primitives::sumFn<T, RNG>},
+      42, 50, 8, 6, 5, 0.5, false, {primitives::sumFn<T, RNG>},
       {primitives::makeVarTerm<T, RNG>(0), primitives::makeVarTerm<T, RNG>(1)});
   EXPECT_EQ((unsigned)42, params.seed);
   EXPECT_EQ((size_t)50, params.numGenerations);
@@ -42,10 +42,10 @@ TEST(ParamsTest, WorksCorrectly) {
 }
 
 TEST(ParamsTest, UpdatesPopulationSizeCorrectly) {
-  Params<T, RNG> params1(0, 0, 0, 0, 5, 0.1, 0, false, {}, {});
+  Params<T, RNG> params1(0, 0, 0, 0, 5, 0.8, false, {}, {});
   EXPECT_EQ((size_t)4, params1.populationSize);
 
-  Params<T, RNG> params2(0, 0, 15, 0, 8, 0.1, 0, false, {}, {});
+  Params<T, RNG> params2(0, 0, 15, 0, 8, 0.8, false, {}, {});
   EXPECT_EQ((size_t)28, params2.populationSize);
 }
 

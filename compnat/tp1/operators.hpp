@@ -20,6 +20,7 @@
 #include <functional>
 #include <random>
 #include <stack>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -58,31 +59,66 @@ size_t tournamentSelection(RNG &rng, size_t tournamentSize,
  * @param rng Random number generator.
  * @param root Tree to select a node.
  * @param size Size of the tree.
- * @return Reference to the selected node.
+ * @return Pair containing reference to the selected node and the height of the
+ *   node.
  */
 template <typename T, class RNG>
-Node<T, RNG> &randomTreePoint(RNG &rng, Node<T, RNG> &root, size_t size) {
+std::tuple<Node<T, RNG> &, size_t> randomTreePoint(RNG &rng, Node<T, RNG> &root,
+                                                   size_t size) {
   std::uniform_int_distribution<size_t> distr(0, size - 1);
   const size_t selectedPoint = distr(rng);
 
-  std::stack<std::reference_wrapper<Node<T, RNG>>> s;
-  s.push(root);
+  std::stack<std::tuple<Node<T, RNG> &, size_t>> s;
+  s.emplace(root, 1);
   for (size_t current = 0;; ++current) {
-    Node<T, RNG> &node = s.top();
+    auto[node, height] = s.top();
     if (current == selectedPoint) {
-      return node;
+      return {node, height};
     }
 
     s.pop();
     for (size_t i = 0; i < node.numChildren(); ++i) {
-      s.push(node.mutableChild(i));
+      s.emplace(node.mutableChild(i), height + 1);
     }
   }
 }
 
 /**
+ * Returns the maximum height of a node.
+ * @param root The node to have it's height calculated.
+ * @param maxHeight Maximum height of the node. If it reaches this, the function
+ *   doesn't need to search anymore.
+ * @return the maximum height of the node.
+ */
+template <typename T, class RNG>
+size_t maxNodeHeight(const Node<T, RNG> &root, size_t maxHeight) {
+  std::stack<std::tuple<const Node<T, RNG> &, size_t>> s;
+  s.emplace(root, 1);
+
+  size_t finalHeight = 0;
+  while (!s.empty()) {
+    auto[node, height] = s.top();
+    s.pop();
+
+    if (finalHeight < height) {
+      finalHeight = height;
+    }
+    if (height == maxHeight) {
+      return maxHeight;
+    }
+
+    for (size_t i = 0; i < node.numChildren(); ++i) {
+      s.emplace(node.child(i), height + 1);
+    }
+  }
+
+  return finalHeight;
+}
+
+/**
  * Realizes crossover on the two trees.
  * @param rng Random number generator.
+ * @param params Genetic algorithm params.
  * @param parentX First parent tree.
  * @param sizeX Number of nodes in the parent tree.
  * @param parentY Second parent tree.
@@ -90,16 +126,25 @@ Node<T, RNG> &randomTreePoint(RNG &rng, Node<T, RNG> &root, size_t size) {
  */
 template <typename T, class RNG>
 std::pair<Node<T, RNG>, Node<T, RNG>>
-crossover(RNG &rng, const Node<T, RNG> &parentX, size_t sizeX,
-          const Node<T, RNG> &parentY, size_t sizeY) {
+crossover(RNG &rng, const Params<T, RNG> &params, const Node<T, RNG> &parentX,
+          size_t sizeX, const Node<T, RNG> &parentY, size_t sizeY) {
   Node<T, RNG> childX = parentX;
   Node<T, RNG> childY = parentY;
 
-  auto &crossNodeX = randomTreePoint(rng, childX, sizeX);
-  auto &crossNodeY = randomTreePoint(rng, childY, sizeY);
-  std::swap(crossNodeX, crossNodeY);
+  auto[crossPointX, heightPointX] = randomTreePoint(rng, childX, sizeX);
+  auto[crossPointY, heightPointY] = randomTreePoint(rng, childY, sizeY);
 
-  return {childX, childY};
+  const auto heightCrossX =
+      maxNodeHeight(crossPointX, params.maxHeight - heightPointX + 1);
+  const auto heightCrossY =
+      maxNodeHeight(crossPointY, params.maxHeight - heightPointY + 1);
+
+  std::swap(crossPointX, crossPointY);
+
+  return {
+      heightPointX + heightCrossY - 1 > params.maxHeight ? parentX : childX,
+      heightPointY + heightCrossX - 1 > params.maxHeight ? parentY : childY,
+  };
 }
 
 /**
@@ -114,9 +159,12 @@ Node<T, RNG> mutation(RNG &rng, const Params<T, RNG> &params,
                       const Node<T, RNG> &parent, size_t size) {
   Node<T, RNG> child = parent;
 
-  auto &mutationNode = randomTreePoint(rng, child, size);
-  mutationNode = generators::grow(rng, params.maxHeight, params.functions,
-                                  params.terminals);
+  auto[mutationNode, height] = randomTreePoint(rng, child, size);
+  mutationNode = generators::grow(rng, params.maxHeight - height + 1,
+                                  params.functions, params.terminals);
+  /* LOG(INFO) << maxNodeHeight(child, 50) << " (" << height - 1 << " + " */
+  /*           << maxNodeHeight(mutationNode, 50) << " in " */
+  /*           << params.maxHeight - height + 1 << ") "; */
 
   return child;
 }
@@ -156,8 +204,9 @@ newGeneration(RNG &rng, const Params<T, RNG> &params,
     const auto p2Fitness = parentStats.fitness[p2];
 
     if (distr(rng) <= params.crossoverProb) { // Crossover
-      auto[c1, c2] = crossover(rng, parentPopulation[p1], parentStats.sizes[p1],
-                               parentPopulation[p2], parentStats.sizes[p2]);
+      auto[c1, c2] =
+          crossover(rng, params, parentPopulation[p1], parentStats.sizes[p1],
+                    parentPopulation[p2], parentStats.sizes[p2]);
       newPopulation.push_back(std::move(c1));
       newPopulation.push_back(std::move(c2));
 

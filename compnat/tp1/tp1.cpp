@@ -32,7 +32,6 @@ DEFINE_int32(num_generations, 50, "Number of generations to run.");
 DEFINE_int32(population_size, 100, "Size of the population.");
 DEFINE_int32(tournament_size, 7, "Size of the tournament.");
 DEFINE_int32(max_height, 7, "Maximum tree height.");
-DEFINE_double(bloat_factor, 0.1, "Multiplier to control bloating.");
 DEFINE_double(crossover_prob, 0.9,
               "Crossover probability. Will use mutation otherwise.");
 DEFINE_bool(elitism, false, "Whether to use elitism or not.");
@@ -68,10 +67,10 @@ int main(int argc, char **argv) {
     terminals.push_back(primitives::makeVarTerm<T, RNG>(i));
   }
 
-  Params<T, RNG> params(
-      FLAGS_seed, FLAGS_num_generations, FLAGS_population_size,
-      FLAGS_tournament_size, FLAGS_max_height, FLAGS_bloat_factor,
-      FLAGS_crossover_prob, FLAGS_elitism, functions, terminals);
+  Params<T, RNG> params(FLAGS_seed, FLAGS_num_generations,
+                        FLAGS_population_size, FLAGS_tournament_size,
+                        FLAGS_max_height, FLAGS_crossover_prob, FLAGS_elitism,
+                        functions, terminals);
 
   simulation::simulate(params, trainDataset, testDataset);
 

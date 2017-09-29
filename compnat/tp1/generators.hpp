@@ -17,11 +17,12 @@
 #ifndef COMPNAT_TP1_GENERATORS_HPP
 #define COMPNAT_TP1_GENERATORS_HPP
 
-#include <glog/logging.h>
 #include <random>
 #include <stack>
-#include <utility>
+#include <tuple>
 #include <vector>
+
+#include <glog/logging.h>
 
 #include "representation.hpp"
 
@@ -65,26 +66,30 @@ template <typename T, class RNG>
 Node<T, RNG> grow(RNG &rng, size_t maxHeight,
                   const std::vector<PrimitiveFn<T, RNG>> &functions,
                   const std::vector<PrimitiveFn<T, RNG>> &terminals) {
+  CHECK(maxHeight > 0);
+  if (maxHeight == 1) {
+    return randomPrimitive(rng, terminals);
+  }
   Node<T, RNG> root(randomPrimitive(rng, functions, terminals));
 
-  std::stack<std::pair<Node<T, RNG> *, size_t>> nodes;
-  nodes.emplace(&root, 1);
+  std::stack<std::tuple<Node<T, RNG> &, size_t>> nodes;
+  nodes.emplace(root, 1);
   while (!nodes.empty()) {
     auto[node, height] = nodes.top();
     nodes.pop();
 
-    if (node->isTerminal()) {
+    if (node.isTerminal()) {
       continue;
     } else if (height >= maxHeight - 1) {
-      for (size_t i = 0; i < node->numChildren(); ++i) {
-        node->setChild(i, randomPrimitive(rng, terminals));
+      for (size_t i = 0; i < node.numChildren(); ++i) {
+        node.setChild(i, randomPrimitive(rng, terminals));
       }
       continue;
     }
 
-    for (size_t i = 0; i < node->numChildren(); ++i) {
-      node->setChild(i, randomPrimitive(rng, functions, terminals));
-      nodes.emplace(&node->mutableChild(i), height + 1);
+    for (size_t i = 0; i < node.numChildren(); ++i) {
+      node.setChild(i, randomPrimitive(rng, functions, terminals));
+      nodes.emplace(node.mutableChild(i), height + 1);
     }
   }
 
@@ -102,24 +107,28 @@ template <typename T, class RNG>
 Node<T, RNG> full(RNG &rng, size_t maxHeight,
                   const std::vector<PrimitiveFn<T, RNG>> &functions,
                   const std::vector<PrimitiveFn<T, RNG>> &terminals) {
+  CHECK(maxHeight > 0);
+  if (maxHeight == 1) {
+    return randomPrimitive(rng, terminals);
+  }
   Node<T, RNG> root(randomPrimitive(rng, functions));
 
-  std::stack<std::pair<Node<T, RNG> *, size_t>> nodes;
-  nodes.emplace(&root, 1);
+  std::stack<std::tuple<Node<T, RNG> &, size_t>> nodes;
+  nodes.emplace(root, 1);
   while (!nodes.empty()) {
     auto[node, height] = nodes.top();
     nodes.pop();
 
     if (height >= maxHeight - 1) {
-      for (size_t i = 0; i < node->numChildren(); ++i) {
-        node->setChild(i, randomPrimitive(rng, terminals));
+      for (size_t i = 0; i < node.numChildren(); ++i) {
+        node.setChild(i, randomPrimitive(rng, terminals));
       }
       continue;
     }
 
-    for (size_t i = 0; i < node->numChildren(); ++i) {
-      node->setChild(i, randomPrimitive(rng, functions));
-      nodes.emplace(&node->mutableChild(i), height + 1);
+    for (size_t i = 0; i < node.numChildren(); ++i) {
+      node.setChild(i, randomPrimitive(rng, functions));
+      nodes.emplace(node.mutableChild(i), height + 1);
     }
   }
 

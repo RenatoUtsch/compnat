@@ -124,7 +124,7 @@ TEST(RampedHalfAndHalfTest, WorksCorrectly) {
   const size_t maxHeight = 7;
 
   RNG rng;
-  Params<T, RNG> params(0, 100, populationSize, 7, maxHeight, 0.1, 0.8, false,
+  Params<T, RNG> params(0, 100, populationSize, 7, maxHeight, 0.8, false,
                         getFunctions(), getTerminals());
   auto nodes = rampedHalfAndHalf<T, RNG>(rng, params);
   EXPECT_EQ(populationSize, nodes.size());

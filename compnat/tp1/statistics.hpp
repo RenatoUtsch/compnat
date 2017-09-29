@@ -34,15 +34,11 @@ namespace stats {
  * This is implemented as the Root-mean-square deviation.
  * @param individual The individual used when calculating the fitness.
  * @param size The size of the individual.
- * @param maxElements Maximum number of elements in the tree.
- * @param bloatFactor Multiplier to control bloating.
  * @param dataset Dataset to use to calculate the fitness.
  * @return A pair of the fitness and the RMSE.
  */
 template <typename T, class RNG>
-std::pair<double, double> fitness(const Node<T, RNG> &individual, size_t size,
-                                  size_t maxElements, double bloatFactor,
-                                  const Dataset<T> &dataset) {
+double fitness(const Node<T, RNG> &individual, const Dataset<T> &dataset) {
   double error = 0;
   for (const auto &sample : dataset) {
     // Unpack outside the loop because clang on MacOS can't compile it in the
@@ -51,8 +47,7 @@ std::pair<double, double> fitness(const Node<T, RNG> &individual, size_t size,
     error += std::pow(individual.eval(input) - expected, 2);
   }
 
-  const double rmse = std::sqrt(error / dataset.size());
-  return {rmse + bloatFactor * std::pow((double)size / maxElements, 2), rmse};
+  return std::sqrt(error / dataset.size());
 }
 
 /**
@@ -60,25 +55,19 @@ std::pair<double, double> fitness(const Node<T, RNG> &individual, size_t size,
  * This is implemented as the Root-mean-square deviation.
  * @param population The population used when calculating the fitness.
  * @param sizes The size of each individual in the population.
- * @param maxElements The number of elements the trees should have.
- * @param bloatFactor Multiplier to control bloating.
  * @param dataset The dataset used to calculate the fitness.
- * @return Vector of fitness and RMSE.
+ * @return Vector of fitness.
  */
 template <typename T, class RNG>
-std::pair<std::vector<double>, std::vector<double>>
-fitness(const std::vector<Node<T, RNG>> &population,
-        const std::vector<size_t> &sizes, size_t maxElements,
-        double bloatFactor, const Dataset<T> &dataset) {
+std::vector<double> fitness(const std::vector<Node<T, RNG>> &population,
+                            const Dataset<T> &dataset) {
 
   std::vector<double> results(population.size());
-  std::vector<double> rmse(population.size());
   for (size_t i = 0; i < population.size(); ++i) {
-    std::tie(results[i], rmse[i]) =
-        fitness(population[i], sizes[i], maxElements, bloatFactor, dataset);
+    results[i] = fitness(population[i], dataset);
   }
 
-  return {results, rmse};
+  return results;
 }
 
 /**
@@ -109,14 +98,11 @@ struct ImprovementMetadata {
  * Stores the statistics of each generation.
  */
 template <typename T, class RNG> struct Statistics {
-  /// Sizes of all individuals in the generation.
-  std::vector<size_t> sizes;
-
   /// Fitness of all individuals in the generation.
   std::vector<double> fitness;
 
-  /// RMSE of all individuals in the generation.
-  std::vector<double> rmse;
+  /// Sizes of all individuals in the generation.
+  std::vector<size_t> sizes;
 
   /// Index of the best individual in the generation.
   size_t best;
@@ -148,15 +134,13 @@ template <typename T, class RNG> struct Statistics {
   /// String representation of the best individual.
   std::string bestStr;
 
-  Statistics(const Params<T, RNG> &params,
-             const std::vector<Node<T, RNG>> &population,
+  Statistics(const std::vector<Node<T, RNG>> &population,
              const Dataset<T> &dataset,
              const ImprovementMetadata &metadata = {})
-      : sizes(::stats::sizes(population)), best(0), worst(0), averageFitness(0),
+      : fitness(::stats::fitness(population, dataset)),
+        sizes(::stats::sizes(population)), best(0), worst(0), averageFitness(0),
         averageSize(0), numRepeatedIndividuals(0), numCrossoverBetter(0),
         numCrossoverWorse(0), numMutationBetter(0), numMutationWorse(0) {
-    std::tie(fitness, rmse) = ::stats::fitness(
-        population, sizes, params.maxElements, params.bloatFactor, dataset);
 
     calcFitnessStats_();
     calcRepeatedIndividuals_();
@@ -245,10 +229,10 @@ private:
   }
 };
 
-/// Generation results created by aggregating all instance's statistics.
-template <typename T, class RNG>
-GenerationResults
-generationResults(const std::vector<Statistics<T, RNG>> &allStatistics);
+/* /// Generation results created by aggregating all instance's statistics. */
+/* template <typename T, class RNG> */
+/* GenerationResults */
+/* generationResults(const std::vector<Statistics<T, RNG>> &allStatistics); */
 
 } // namespace stats
 

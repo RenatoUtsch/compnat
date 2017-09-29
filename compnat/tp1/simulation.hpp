@@ -34,18 +34,17 @@ void simulate(const Params<T, RNG> &params, const Dataset<T> &trainDataset,
   LOG(INFO) << "";
   LOG(INFO) << "Generation 0";
   auto population = generators::rampedHalfAndHalf(rng, params);
-  auto stats = stats::Statistics<T, RNG>(params, population, trainDataset);
+  auto stats = stats::Statistics<T, RNG>(population, trainDataset);
   stats::ImprovementMetadata metadata;
   for (size_t i = 1; i <= params.numGenerations; ++i) {
     LOG(INFO) << "Generation " << i;
     std::tie(population, metadata) =
         operators::newGeneration(rng, params, population, stats);
-    stats =
-        stats::Statistics<T, RNG>(params, population, trainDataset, metadata);
+    stats = stats::Statistics<T, RNG>(population, trainDataset, metadata);
   }
 
   LOG(INFO) << "Test statistics";
-  auto testStats = stats::Statistics<T, RNG>(params, population, testDataset);
+  auto testStats = stats::Statistics<T, RNG>(population, testDataset);
 }
 
 } // namespace simulation
