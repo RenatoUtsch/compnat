@@ -136,8 +136,8 @@ template <typename T, class RNG> struct Statistics {
   /// String representation of the best individual.
   std::string bestStr;
 
-  template <class ThreadPool>
-  Statistics(ThreadPool &pool, const std::vector<Node<T, RNG>> &population,
+  Statistics(threading::ThreadPool &pool,
+             const std::vector<Node<T, RNG>> &population,
              const Dataset<T> &dataset,
              const ImprovementMetadata &metadata = {})
       : fitness(::stats::fitness(pool, population, dataset)),

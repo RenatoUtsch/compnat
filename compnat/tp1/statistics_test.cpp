@@ -25,6 +25,7 @@
 #include "parser.hpp"
 #include "primitives.hpp"
 #include "representation.hpp"
+#include "threading.hpp"
 
 namespace {
 using T = double;
@@ -64,7 +65,8 @@ TEST(FitnessTest, WorksCorrectly) {
       {{15, 4}, 21},
   };
 
-  const auto fitness = stats::fitness(population, dataset);
+  threading::ThreadPool pool;
+  const auto fitness = stats::fitness(pool, population, dataset);
   ASSERT_EQ((size_t)3, fitness.size());
   EXPECT_FLOAT_EQ(1.5811388, fitness[0]);
   EXPECT_FLOAT_EQ(14.534055, fitness[1]);
@@ -115,7 +117,8 @@ TEST(StatisticsTest, SingleGenerationPerformanceBenchmark) {
   const auto &population = generators::rampedHalfAndHalf(rng, params);
   EXPECT_EQ((size_t)600, population.size());
 
-  const auto &stats = Statistics<T, RNG>(population, dataset);
+  threading::ThreadPool pool;
+  const auto &stats = Statistics<T, RNG>(pool, population, dataset);
   EXPECT_EQ((size_t)600, stats.fitness.size());
   EXPECT_EQ((size_t)600, stats.sizes.size());
 }

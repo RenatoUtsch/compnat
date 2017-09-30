@@ -24,6 +24,8 @@
 #include <thread>
 #include <vector>
 
+#include <glog/logging.h>
+
 namespace threading {
 
 /**
@@ -36,7 +38,7 @@ public:
    * By default, the number of threads is the hardware concurrency.
    */
   ThreadPool(size_t numThreads = std::thread::hardware_concurrency())
-      : counter_(0), end_(0), shouldJoin_(false) {
+      : finishedCount_(0), counter_(0), end_(0), shouldJoin_(false) {
     for (size_t i = 0; i < numThreads; ++i) {
       threads_.emplace_back([this]() { worker_(); });
     }
@@ -53,6 +55,7 @@ public:
   /// Sets the given task to run, from begin to end, and waits.
   void run(size_t begin, size_t end, std::function<void(size_t)> taskFn) {
     taskFn_ = taskFn;
+    finishedCount_ = 0;
     counter_ = begin;
     end_ = end;
     waitingCondition_.notify_all();
@@ -82,7 +85,8 @@ private:
       if (index < end_) {
         taskFn_(index);
       } else {
-        if (index == end_) {
+        const size_t numFinishedThreads = ++finishedCount_;
+        if (numFinishedThreads == threads_.size()) {
           finishedCondition_.notify_one();
         }
 
@@ -95,6 +99,7 @@ private:
   std::vector<std::thread> threads_;
   std::function<void(size_t)> taskFn_;
 
+  std::atomic_size_t finishedCount_;
   std::atomic_size_t counter_;
   size_t end_;
 

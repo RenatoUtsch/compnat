@@ -73,6 +73,7 @@ cc_test(
         ":parser",
         ":primitives",
         ":statistics",
+        ":threading",
         "//third_party:gtest",
     ],
 )
@@ -196,6 +197,7 @@ cc_test(
         ":primitives",
         ":representation",
         ":statistics",
+        ":threading",
         "//third_party:gmock",
         "//third_party:gtest",
     ],

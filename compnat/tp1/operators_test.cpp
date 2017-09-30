@@ -24,6 +24,7 @@
 #include "parser.hpp"
 #include "primitives.hpp"
 #include "statistics.hpp"
+#include "threading.hpp"
 
 namespace {
 using T = double;
@@ -118,6 +119,7 @@ TEST(MutationTest, OneElementTree) {
 
 TEST(NewGenerationTest, WorksCorrectly) {
   RNG rng;
+  threading::ThreadPool pool;
 
   // For params.maxHeight, functions and terminals.
   Params<T, RNG> params(0, 10, 60, 5, 7, 0.9, true,
@@ -136,11 +138,11 @@ TEST(NewGenerationTest, WorksCorrectly) {
       parser::loadDataset<T>("compnat/tp1/datasets/keijzer-7-train.csv");
 
   const auto population = generators::rampedHalfAndHalf(rng, params);
-  const auto stats = stats::Statistics<T, RNG>(population, dataset);
+  const auto stats = stats::Statistics<T, RNG>(pool, population, dataset);
   const auto[newPopulation, improvementMetadata] =
       newGeneration(rng, params, population, stats);
-  const auto newStats =
-      stats::Statistics<T, RNG>(newPopulation, dataset, improvementMetadata);
+  const auto newStats = stats::Statistics<T, RNG>(pool, newPopulation, dataset,
+                                                  improvementMetadata);
 
   EXPECT_EQ(population.size(), newPopulation.size());
 
