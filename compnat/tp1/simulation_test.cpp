@@ -25,31 +25,29 @@
 #include "representation.hpp"
 
 namespace {
-using T = double;
-using RNG = std::mt19937;
 using simulation::simulate;
 
 TEST(NewGenerationTest, WorksCorrectly) {
-  RNG rng;
+  repr::RNG rng;
 
   // For params.maxHeight, functions and terminals.
-  Params<T, RNG> params( // Keep formatting
+  repr::Params params( // Keep formatting
       0, 10, 60, 5, 7, 0.9, false,
       {
-          primitives::sumFn<T, RNG>,
-          primitives::subFn<T, RNG>,
-          primitives::multFn<T, RNG>,
-          primitives::divFn<T, RNG>,
+          primitives::sumFn,
+          primitives::subFn,
+          primitives::multFn,
+          primitives::divFn,
       },
       {
-          primitives::constTerm<T, RNG>,
-          primitives::makeVarTerm<T, RNG>(0),
+          primitives::constTerm,
+          primitives::makeVarTerm(0),
       });
 
   const auto &trainDataset =
-      parser::loadDataset<T>("compnat/tp1/datasets/keijzer-7-train.csv");
+      parser::loadDataset("compnat/tp1/datasets/keijzer-7-train.csv");
   const auto &testDataset =
-      parser::loadDataset<T>("compnat/tp1/datasets/keijzer-7-test.csv");
+      parser::loadDataset("compnat/tp1/datasets/keijzer-7-test.csv");
 
   simulate(params, trainDataset, testDataset);
 }

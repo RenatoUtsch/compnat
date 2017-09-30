@@ -29,48 +29,45 @@ using generators::grow;
 using generators::rampedHalfAndHalf;
 using generators::randomPrimitive;
 using utils::strCat;
-using T = double;
-using RNG = std::mt19937;
 
-std::vector<PrimitiveFn<T, RNG>> getFunctions() {
+std::vector<repr::PrimitiveFn> getFunctions() {
   return {
-      primitives::sumFn<T, RNG>,  primitives::subFn<T, RNG>,
-      primitives::multFn<T, RNG>, primitives::divFn<T, RNG>,
-      primitives::logFn<T, RNG>,
+      primitives::sumFn, primitives::subFn, primitives::multFn,
+      primitives::divFn, primitives::logFn,
   };
 }
-std::vector<PrimitiveFn<T, RNG>> getTerminals() {
+std::vector<repr::PrimitiveFn> getTerminals() {
   return {
-      primitives::makeVarTerm<T, RNG>(0),
-      primitives::makeVarTerm<T, RNG>(1),
+      primitives::makeVarTerm(0),
+      primitives::makeVarTerm(1),
   };
 }
 
-void fillChildrenWithVars(RNG &rng, Node<T, RNG> &node) {
+void fillChildrenWithVars(repr::RNG &rng, repr::Node &node) {
   for (size_t i = 0; i < node.numChildren(); ++i) {
-    node.setChild(i, primitives::makeVarTerm<T, RNG>(i)(rng));
+    node.setChild(i, primitives::makeVarTerm(i)(rng));
   }
 }
 
 TEST(RandomPrimitiveTest, SinglePrimitivesWorksCorrectly) {
-  RNG rng;
+  repr::RNG rng;
   const auto &functions = getFunctions();
 
-  auto node1 = Node<T, RNG>(randomPrimitive(rng, functions));
+  auto node1 = repr::Node(randomPrimitive(rng, functions));
   fillChildrenWithVars(rng, node1);
 
-  auto node2 = Node<T, RNG>(randomPrimitive(rng, functions));
+  auto node2 = repr::Node(randomPrimitive(rng, functions));
   fillChildrenWithVars(rng, node2);
 
   EXPECT_NE(node1.str(), node2.str());
 }
 
 TEST(RandomPrimitiveTest, MultiplePrimitivesWorksCorrectly) {
-  RNG rng;
+  repr::RNG rng;
   const auto &functions = getFunctions();
   const auto &terminals = getTerminals();
 
-  auto node1 = Node<T, RNG>(randomPrimitive(rng, functions, terminals));
+  auto node1 = repr::Node(randomPrimitive(rng, functions, terminals));
   for (size_t i = 0; i < node1.numChildren(); ++i) {
     node1.setChild(i, randomPrimitive(rng, terminals));
   }
@@ -81,7 +78,7 @@ TEST(RandomPrimitiveTest, MultiplePrimitivesWorksCorrectly) {
     EXPECT_TRUE(node1.isTerminal());
   }
 
-  auto node2 = Node<T, RNG>(randomPrimitive(rng, functions, terminals));
+  auto node2 = repr::Node(randomPrimitive(rng, functions, terminals));
   for (size_t i = 0; i < node2.numChildren(); ++i) {
     node2.setChild(i, randomPrimitive(rng, terminals));
   }
@@ -96,25 +93,25 @@ TEST(RandomPrimitiveTest, MultiplePrimitivesWorksCorrectly) {
 }
 
 TEST(GrowTest, WorksCorrectly) {
-  RNG rng;
+  repr::RNG rng;
   const size_t maxHeight = 7;
   const auto &functions = getFunctions();
   const auto &terminals = getTerminals();
 
-  auto node1 = grow<T, RNG>(rng, maxHeight, functions, terminals);
-  auto node2 = grow<T, RNG>(rng, maxHeight, functions, terminals);
+  auto node1 = grow(rng, maxHeight, functions, terminals);
+  auto node2 = grow(rng, maxHeight, functions, terminals);
 
   EXPECT_NE(node1.str(), node2.str());
 }
 
 TEST(FullTest, WorksCorrectly) {
-  RNG rng;
+  repr::RNG rng;
   const size_t maxHeight = 7;
   const auto &functions = getFunctions();
   const auto &terminals = getTerminals();
 
-  auto node1 = full<T, RNG>(rng, maxHeight, functions, terminals);
-  auto node2 = full<T, RNG>(rng, maxHeight, functions, terminals);
+  auto node1 = full(rng, maxHeight, functions, terminals);
+  auto node2 = full(rng, maxHeight, functions, terminals);
 
   EXPECT_NE(node1.str(), node2.str());
 }
@@ -123,10 +120,10 @@ TEST(RampedHalfAndHalfTest, WorksCorrectly) {
   const size_t populationSize = 48;
   const size_t maxHeight = 7;
 
-  RNG rng;
-  Params<T, RNG> params(0, 100, populationSize, 7, maxHeight, 0.8, false,
-                        getFunctions(), getTerminals());
-  auto nodes = rampedHalfAndHalf<T, RNG>(rng, params);
+  repr::RNG rng;
+  repr::Params params(0, 100, populationSize, 7, maxHeight, 0.8, false,
+                      getFunctions(), getTerminals());
+  auto nodes = rampedHalfAndHalf(rng, params);
   EXPECT_EQ(populationSize, nodes.size());
 }
 

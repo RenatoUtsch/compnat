@@ -17,16 +17,11 @@
 #ifndef COMPNAT_TP1_STATISTICS_HPP
 #define COMPNAT_TP1_STATISTICS_HPP
 
-#include <cmath>
 #include <string>
-#include <unordered_set>
 #include <vector>
-
-#include <glog/logging.h>
 
 #include "representation.hpp"
 #include "threading.hpp"
-#include "utils.hpp"
 
 namespace stats {
 
@@ -38,18 +33,7 @@ namespace stats {
  * @param dataset Dataset to use to calculate the fitness.
  * @return A pair of the fitness and the RMSE.
  */
-template <typename T, class RNG>
-double fitness(const Node<T, RNG> &individual, const Dataset<T> &dataset) {
-  double error = 0;
-  for (const auto &sample : dataset) {
-    // Unpack outside the loop because clang on MacOS can't compile it in the
-    // loop.
-    const auto & [ input, expected ] = sample;
-    error += std::pow(individual.eval(input) - expected, 2);
-  }
-
-  return std::sqrt(error / dataset.size());
-}
+double fitness(const repr::Node &individual, const repr::Dataset &dataset);
 
 /**
  * Calculates the fitness for all population and returns it in a vector.
@@ -60,30 +44,14 @@ double fitness(const Node<T, RNG> &individual, const Dataset<T> &dataset) {
  * @param dataset The dataset used to calculate the fitness.
  * @return Vector of fitness.
  */
-template <typename T, class RNG>
 std::vector<double> fitness(threading::ThreadPool &pool,
-                            const std::vector<Node<T, RNG>> &population,
-                            const Dataset<T> &dataset) {
-  std::vector<double> results(population.size());
-  pool.run(0, population.size(), [&results, &population, &dataset](size_t i) {
-    results[i] = fitness(population[i], dataset);
-  });
-
-  return results;
-}
+                            const std::vector<repr::Node> &population,
+                            const repr::Dataset &dataset);
 
 /**
  * Calculates the size for all the population.
  */
-template <typename T, class RNG>
-std::vector<size_t> sizes(const std::vector<Node<T, RNG>> &population) {
-  std::vector<size_t> sizes(population.size());
-  for (size_t i = 0; i < population.size(); ++i) {
-    sizes[i] = population[i].size();
-  }
-
-  return sizes;
-}
+std::vector<size_t> sizes(const std::vector<repr::Node> &population);
 
 /// Per-generation improvement stats.
 struct ImprovementMetadata {
@@ -99,7 +67,7 @@ struct ImprovementMetadata {
 /**
  * Stores the statistics of each generation.
  */
-template <typename T, class RNG> struct Statistics {
+struct Statistics {
   /// Fitness of all individuals in the generation.
   std::vector<double> fitness;
 
@@ -113,7 +81,7 @@ template <typename T, class RNG> struct Statistics {
   size_t worst;
 
   /// Average fitness of the generation.
-  T averageFitness;
+  double averageFitness;
 
   /// Average individual size.
   size_t averageSize;
@@ -137,105 +105,32 @@ template <typename T, class RNG> struct Statistics {
   std::string bestStr;
 
   Statistics(threading::ThreadPool &pool,
-             const std::vector<Node<T, RNG>> &population,
-             const Dataset<T> &dataset,
-             const ImprovementMetadata &metadata = {})
-      : fitness(::stats::fitness(pool, population, dataset)),
-        sizes(::stats::sizes(population)), best(0), worst(0), averageFitness(0),
-        averageSize(0), numRepeatedIndividuals(0), numCrossoverBetter(0),
-        numCrossoverWorse(0), numMutationBetter(0), numMutationWorse(0) {
-
-    calcFitnessStats_();
-    calcRepeatedIndividuals_();
-    calcAverageSize_();
-    calcImprovementStats_(metadata);
-
-    bestStr = population[best].str();
-
-    printStats_(metadata);
-  }
+             const std::vector<repr::Node> &population,
+             const repr::Dataset &dataset,
+             const ImprovementMetadata &metadata = {});
 
 private:
   /// best, worst, averageFitness.
-  void calcFitnessStats_() {
-    for (size_t i = 0; i < fitness.size(); ++i) {
-      if (fitness[best] > fitness[i]) {
-        best = i;
-      }
-      if (fitness[worst] < fitness[i]) {
-        worst = i;
-      }
-      averageFitness += fitness[i];
-    }
-    averageFitness /= fitness.size();
-  }
+  void calcFitnessStats_();
 
   /// numRepeatedIndividuals.
-  void calcRepeatedIndividuals_() {
-    std::unordered_set<T> set;
-    for (const auto &fit : fitness) {
-      if (set.count(fit)) {
-        ++numRepeatedIndividuals;
-      } else {
-        set.insert(fit);
-      }
-    }
-  }
+  void calcRepeatedIndividuals_();
 
-  void calcAverageSize_() {
-    for (auto size : sizes) {
-      averageSize += size;
-    }
-    averageSize /= sizes.size();
-  }
+  void calcAverageSize_();
 
   // num[Crossover/Mutation]Better, num[Crossover/Mutation]Worse.
-  void calcImprovementStats_(const ImprovementMetadata &metadata) {
-    calcFitnessImprovement_(metadata.crossoverAvgParentFitness,
-                            numCrossoverBetter, numCrossoverWorse);
-    calcFitnessImprovement_(metadata.mutationParentFitness, numMutationBetter,
-                            numMutationWorse);
-  }
+  void calcImprovementStats_(const ImprovementMetadata &metadata);
 
   void calcFitnessImprovement_(
       const std::vector<std::pair<size_t, double>> &fitnesses, size_t &better,
-      size_t &worse) {
-    for (const auto &p : fitnesses) {
-      const auto & [ childIndex, parentFitness ] = p;
-      if (fitness[childIndex] < parentFitness) {
-        ++better;
-      } else if (fitness[childIndex] > parentFitness) {
-        ++worse;
-      }
-    }
-  }
+      size_t &worse);
 
-  void printStats_(const ImprovementMetadata &metadata) {
-    using utils::paddedStrCat;
-    const size_t w = 30; // Width of each padded string.
-
-    LOG(INFO) << paddedStrCat(w, "  best fitness: ", fitness[best])
-              << paddedStrCat(w, "| best size: ", sizes[best])
-              << paddedStrCat(w, "| worst fitness: ", fitness[worst])
-              << paddedStrCat(w, "| worst size: ", sizes[worst]);
-    LOG(INFO) << paddedStrCat(w, "  avgFitness: ", averageFitness)
-              << paddedStrCat(w, "| avgSize: ", averageSize)
-              << paddedStrCat(w, "| numRepeated: ", numRepeatedIndividuals);
-
-    if (!metadata.crossoverAvgParentFitness.empty() &&
-        !metadata.mutationParentFitness.empty()) {
-      LOG(INFO) << paddedStrCat(w, "  numCrossBetter: ", numCrossoverBetter)
-                << paddedStrCat(w, "| numCrossWorse: ", numCrossoverWorse)
-                << paddedStrCat(w, "| numMutBetter: ", numMutationBetter)
-                << paddedStrCat(w, "| numMutWorse: ", numMutationWorse);
-    }
-  }
+  void printStats_(const ImprovementMetadata &metadata);
 };
 
 /* /// Generation results created by aggregating all instance's statistics. */
-/* template <typename T, class RNG> */
 /* GenerationResults */
-/* generationResults(const std::vector<Statistics<T, RNG>> &allStatistics); */
+/* generationResults(const std::vector<Statistics> &allStatistics); */
 
 } // namespace stats
 

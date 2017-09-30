@@ -17,55 +17,16 @@
 #ifndef COMPNAT_TP1_PARSER_HPP
 #define COMPNAT_TP1_PARSER_HPP
 
-#include <fstream>
-#include <sstream>
 #include <string>
 
-#include <glog/logging.h>
-
 #include "representation.hpp"
-#include "utils.hpp"
 
 namespace parser {
-
-// https://stackoverflow.com/a/7408245/1099010
-std::vector<std::string> splitLine(const std::string &text, char sep) {
-  std::vector<std::string> tokens;
-  std::size_t start = 0, end = 0;
-  while ((end = text.find(sep, start)) != std::string::npos) {
-    tokens.push_back(text.substr(start, end - start));
-    start = end + 1;
-  }
-  tokens.push_back(text.substr(start));
-  return tokens;
-}
 
 /**
  * Loads a dataset from a CSV file.
  */
-template <typename T> Dataset<T> loadDataset(const std::string &filename) {
-  Dataset<T> dataset;
-
-  std::ifstream in(filename);
-  CHECK(in.is_open());
-
-  std::string line;
-  while (std::getline(in, line)) {
-    const auto &tokens = splitLine(line, ',');
-    const size_t numInputs = tokens.size() - 1;
-
-    EvalInput<T> input(numInputs);
-    for (size_t i = 0; i < numInputs; ++i) {
-      utils::strSplit(tokens[i], input[i]);
-    }
-
-    T expectedValue;
-    utils::strSplit(tokens[tokens.size() - 1], expectedValue);
-    dataset.push_back({input, expectedValue});
-  }
-
-  return dataset;
-}
+repr::Dataset loadDataset(const std::string &filename);
 
 } // namespace parser
 

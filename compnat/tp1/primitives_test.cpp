@@ -26,53 +26,53 @@ namespace {
 using T = double;
 using RNG = std::mt19937;
 
-Node<T, RNG> generateNode2(const PrimitiveFn<T, RNG> &primitiveFn) {
-  RNG rng(0);
-  Node<T, RNG> node(primitiveFn(rng));
-  node.setChild(0, Node<T, RNG>(primitives::makeVarTerm<T, RNG>(0)(rng)));
-  node.setChild(1, Node<T, RNG>(primitives::makeVarTerm<T, RNG>(1)(rng)));
+repr::Node generateNode2(const repr::PrimitiveFn &primitiveFn) {
+  repr::RNG rng(0);
+  repr::Node node(primitiveFn(rng));
+  node.setChild(0, repr::Node(primitives::makeVarTerm(0)(rng)));
+  node.setChild(1, repr::Node(primitives::makeVarTerm(1)(rng)));
 
   return node;
 }
 
-Node<T, RNG> generateNode1(const PrimitiveFn<T, RNG> &primitiveFn) {
-  RNG rng(0);
-  Node<T, RNG> node(primitiveFn(rng));
-  node.setChild(0, Node<T, RNG>(primitives::makeVarTerm<T, RNG>(0)(rng)));
+repr::Node generateNode1(const repr::PrimitiveFn &primitiveFn) {
+  repr::RNG rng(0);
+  repr::Node node(primitiveFn(rng));
+  node.setChild(0, repr::Node(primitives::makeVarTerm(0)(rng)));
 
   return node;
 }
 
-Node<T, RNG> generateNode0(const PrimitiveFn<T, RNG> &primitiveFn) {
-  RNG rng(0);
-  Node<T, RNG> node(primitiveFn(rng));
+repr::Node generateNode0(const repr::PrimitiveFn &primitiveFn) {
+  repr::RNG rng(0);
+  repr::Node node(primitiveFn(rng));
 
   return node;
 }
 
 TEST(SumFnTest, WorksCorrectly) {
-  const auto &node = generateNode2(primitives::sumFn<T, RNG>);
+  const auto &node = generateNode2(primitives::sumFn);
   EXPECT_FALSE(node.isTerminal());
   EXPECT_EQ("(x0 + x1)", node.str());
   EXPECT_EQ(5, node.eval({{3, 2}}));
 }
 
 TEST(SubFnTest, WorksCorrectly) {
-  const auto &node = generateNode2(primitives::subFn<T, RNG>);
+  const auto &node = generateNode2(primitives::subFn);
   EXPECT_FALSE(node.isTerminal());
   EXPECT_EQ("(x0 - x1)", node.str());
   EXPECT_EQ(1, node.eval({{3, 2}}));
 }
 
 TEST(MultFnTest, WorksCorrectly) {
-  const auto &node = generateNode2(primitives::multFn<T, RNG>);
+  const auto &node = generateNode2(primitives::multFn);
   EXPECT_FALSE(node.isTerminal());
   EXPECT_EQ("(x0 * x1)", node.str());
   EXPECT_EQ(6, node.eval({{3, 2}}));
 }
 
 TEST(DivFnTest, WorksCorrectly) {
-  const auto &node = generateNode2(primitives::divFn<T, RNG>);
+  const auto &node = generateNode2(primitives::divFn);
   EXPECT_FALSE(node.isTerminal());
   EXPECT_EQ("(x0 / x1)", node.str());
   EXPECT_EQ(1.5, node.eval({{3, 2}}));
@@ -80,21 +80,21 @@ TEST(DivFnTest, WorksCorrectly) {
 }
 
 TEST(LogFnTest, WorksCorrectly) {
-  const auto &node = generateNode1(primitives::logFn<T, RNG>);
+  const auto &node = generateNode1(primitives::logFn);
   EXPECT_FALSE(node.isTerminal());
   EXPECT_EQ("log2(x0)", node.str());
   EXPECT_FLOAT_EQ(1.5849625, node.eval({{3, 0}}));
 }
 
 TEST(ConstTermTest, WorksCorrectly) {
-  const auto &node = generateNode0(primitives::constTerm<T, RNG>);
+  const auto &node = generateNode0(primitives::constTerm);
   EXPECT_TRUE(node.isTerminal());
   EXPECT_EQ("0.185689", node.str());
   EXPECT_FLOAT_EQ(0.18568923, node.eval({}));
 }
 
 TEST(VarTermTest, WorksCorrectly) {
-  const auto &node = generateNode0(primitives::makeVarTerm<T, RNG>(2));
+  const auto &node = generateNode0(primitives::makeVarTerm(2));
   EXPECT_TRUE(node.isTerminal());
   EXPECT_EQ("x2", node.str());
   EXPECT_FLOAT_EQ(3, node.eval({{0, 0, 3}}));

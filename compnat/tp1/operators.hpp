@@ -17,14 +17,10 @@
 #ifndef COMPNAT_TP1_OPERATORS_HPP
 #define COMPNAT_TP1_OPERATORS_HPP
 
-#include <functional>
-#include <random>
-#include <stack>
 #include <tuple>
 #include <utility>
 #include <vector>
 
-#include "generators.hpp"
 #include "representation.hpp"
 #include "statistics.hpp"
 
@@ -38,21 +34,8 @@ namespace operators {
  * @param fitness Fitness of the individuals of the population
  * @return The index of the individual with the best fitness in the tournament.
  */
-template <typename T, class RNG>
-size_t tournamentSelection(RNG &rng, size_t tournamentSize,
-                           const std::vector<T> &fitness) {
-  std::uniform_int_distribution<size_t> distr(0, fitness.size() - 1);
-  size_t best = distr(rng);
-
-  for (size_t i = 1; i < tournamentSize; ++i) {
-    size_t candidate = distr(rng);
-    if (fitness[candidate] < fitness[best]) {
-      best = candidate;
-    }
-  }
-
-  return best;
-}
+size_t tournamentSelection(repr::RNG &rng, size_t tournamentSize,
+                           const std::vector<repr::T> &fitness);
 
 /**
  * Uses a traversal to select a random tree point.
@@ -62,26 +45,8 @@ size_t tournamentSelection(RNG &rng, size_t tournamentSize,
  * @return Pair containing reference to the selected node and the height of the
  *   node.
  */
-template <typename T, class RNG>
-std::tuple<Node<T, RNG> &, size_t> randomTreePoint(RNG &rng, Node<T, RNG> &root,
-                                                   size_t size) {
-  std::uniform_int_distribution<size_t> distr(0, size - 1);
-  const size_t selectedPoint = distr(rng);
-
-  std::stack<std::tuple<Node<T, RNG> &, size_t>> s;
-  s.emplace(root, 1);
-  for (size_t current = 0;; ++current) {
-    auto[node, height] = s.top();
-    if (current == selectedPoint) {
-      return {node, height};
-    }
-
-    s.pop();
-    for (size_t i = 0; i < node.numChildren(); ++i) {
-      s.emplace(node.mutableChild(i), height + 1);
-    }
-  }
-}
+std::tuple<repr::Node &, size_t> randomTreePoint(repr::RNG &rng,
+                                                 repr::Node &root, size_t size);
 
 /**
  * Returns the maximum height of a node.
@@ -90,30 +55,7 @@ std::tuple<Node<T, RNG> &, size_t> randomTreePoint(RNG &rng, Node<T, RNG> &root,
  *   doesn't need to search anymore.
  * @return the maximum height of the node.
  */
-template <typename T, class RNG>
-size_t maxNodeHeight(const Node<T, RNG> &root, size_t maxHeight) {
-  std::stack<std::tuple<const Node<T, RNG> &, size_t>> s;
-  s.emplace(root, 1);
-
-  size_t finalHeight = 0;
-  while (!s.empty()) {
-    auto[node, height] = s.top();
-    s.pop();
-
-    if (finalHeight < height) {
-      finalHeight = height;
-    }
-    if (height == maxHeight) {
-      return maxHeight;
-    }
-
-    for (size_t i = 0; i < node.numChildren(); ++i) {
-      s.emplace(node.child(i), height + 1);
-    }
-  }
-
-  return finalHeight;
-}
+size_t maxNodeHeight(const repr::Node &root, size_t maxHeight);
 
 /**
  * Realizes crossover on the two trees.
@@ -124,28 +66,9 @@ size_t maxNodeHeight(const Node<T, RNG> &root, size_t maxHeight) {
  * @param parentY Second parent tree.
  * @param sizeY Number of nodes in the parent tree.
  */
-template <typename T, class RNG>
-std::pair<Node<T, RNG>, Node<T, RNG>>
-crossover(RNG &rng, const Params<T, RNG> &params, const Node<T, RNG> &parentX,
-          size_t sizeX, const Node<T, RNG> &parentY, size_t sizeY) {
-  Node<T, RNG> childX = parentX;
-  Node<T, RNG> childY = parentY;
-
-  auto[crossPointX, heightPointX] = randomTreePoint(rng, childX, sizeX);
-  auto[crossPointY, heightPointY] = randomTreePoint(rng, childY, sizeY);
-
-  const auto heightCrossX =
-      maxNodeHeight(crossPointX, params.maxHeight - heightPointX + 1);
-  const auto heightCrossY =
-      maxNodeHeight(crossPointY, params.maxHeight - heightPointY + 1);
-
-  std::swap(crossPointX, crossPointY);
-
-  return {
-      heightPointX + heightCrossY - 1 > params.maxHeight ? parentX : childX,
-      heightPointY + heightCrossX - 1 > params.maxHeight ? parentY : childY,
-  };
-}
+std::pair<repr::Node, repr::Node>
+crossover(repr::RNG &rng, const repr::Params &params, const repr::Node &parentX,
+          size_t sizeX, const repr::Node &parentY, size_t sizeY);
 
 /**
  * Realizes mutation on the given tree.
@@ -154,20 +77,8 @@ crossover(RNG &rng, const Params<T, RNG> &params, const Node<T, RNG> &parentX,
  * @param parent Parent tree to mutate.
  * @param size Number of nodes in the parent tree.
  */
-template <typename T, class RNG>
-Node<T, RNG> mutation(RNG &rng, const Params<T, RNG> &params,
-                      const Node<T, RNG> &parent, size_t size) {
-  Node<T, RNG> child = parent;
-
-  auto[mutationNode, height] = randomTreePoint(rng, child, size);
-  mutationNode = generators::grow(rng, params.maxHeight - height + 1,
-                                  params.functions, params.terminals);
-  /* LOG(INFO) << maxNodeHeight(child, 50) << " (" << height - 1 << " + " */
-  /*           << maxNodeHeight(mutationNode, 50) << " in " */
-  /*           << params.maxHeight - height + 1 << ") "; */
-
-  return child;
-}
+repr::Node mutation(repr::RNG &rng, const repr::Params &params,
+                    const repr::Node &parent, size_t size);
 
 /**
  * Generates a new population from an existing one.
@@ -178,60 +89,10 @@ Node<T, RNG> mutation(RNG &rng, const Params<T, RNG> &params,
  * @return Tuple containing the new population, the indices of crossover
  *   children and indices of mutation children.
  */
-template <typename T, class RNG>
-std::pair<std::vector<Node<T, RNG>>, stats::ImprovementMetadata>
-newGeneration(RNG &rng, const Params<T, RNG> &params,
-              const std::vector<Node<T, RNG>> &parentPopulation,
-              const stats::Statistics<T, RNG> &parentStats) {
-  CHECK(params.crossoverProb >= 0.0 && params.crossoverProb < 1.0);
-
-  size_t i = 0;
-  std::vector<Node<T, RNG>> newPopulation;
-  if (params.elitism) {
-    // Make a copy.
-    newPopulation.push_back(parentPopulation[parentStats.best]);
-    i++;
-  }
-
-  std::uniform_real_distribution<double> distr(0.0, 1.0);
-  stats::ImprovementMetadata metadata;
-  while (newPopulation.size() < parentPopulation.size()) {
-    const size_t p1 =
-        tournamentSelection(rng, params.tournamentSize, parentStats.fitness);
-    const auto p1Fitness = parentStats.fitness[p1];
-    const size_t p2 =
-        tournamentSelection(rng, params.tournamentSize, parentStats.fitness);
-    const auto p2Fitness = parentStats.fitness[p2];
-
-    if (distr(rng) <= params.crossoverProb) { // Crossover
-      auto[c1, c2] =
-          crossover(rng, params, parentPopulation[p1], parentStats.sizes[p1],
-                    parentPopulation[p2], parentStats.sizes[p2]);
-      newPopulation.push_back(std::move(c1));
-      newPopulation.push_back(std::move(c2));
-
-      const auto avgParentFitness = (p1Fitness + p2Fitness) / 2.0;
-      metadata.crossoverAvgParentFitness.emplace_back(i++, avgParentFitness);
-      metadata.crossoverAvgParentFitness.emplace_back(i++, avgParentFitness);
-    } else { // Mutation
-      newPopulation.push_back(
-          mutation(rng, params, parentPopulation[p1], parentStats.sizes[p1]));
-      newPopulation.push_back(
-          mutation(rng, params, parentPopulation[p2], parentStats.sizes[p2]));
-
-      metadata.mutationParentFitness.emplace_back(i++, p1Fitness);
-      metadata.mutationParentFitness.emplace_back(i++, p2Fitness);
-    }
-  }
-
-  // We added always two new individuals, so we may have exceeded the population
-  // size.
-  if (newPopulation.size() > parentPopulation.size()) {
-    CHECK(newPopulation.size() == parentPopulation.size() + 1);
-    newPopulation.pop_back();
-  }
-  return {newPopulation, metadata};
-}
+std::pair<std::vector<repr::Node>, stats::ImprovementMetadata>
+newGeneration(repr::RNG &rng, const repr::Params &params,
+              const std::vector<repr::Node> &parentPopulation,
+              const stats::Statistics &parentStats);
 
 } // namespace operators
 

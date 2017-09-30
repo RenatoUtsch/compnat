@@ -18,61 +18,66 @@
 #define COMPNAT_TP1_REPRESENTATION_HPP
 
 #include <functional>
+#include <random>
 #include <string>
 #include <vector>
 
 #include <glog/logging.h>
 
-template <typename T, class RNG> class Node;
+namespace repr {
+class Node;
+struct Primitive;
+
+/// Type of the input data.
+using T = double;
+
+/// Type of the random number generator.
+using RNG = std::mt19937;
 
 /**
  * Input for evaluation of a node.
  * Each index in the vector represents the corresponding variable's value.
  */
-template <typename T> using EvalInput = std::vector<T>;
+using EvalInput = std::vector<T>;
 
 /// Vector representing children.
-template <typename T, class RNG> using Children = std::vector<Node<T, RNG>>;
+using Children = std::vector<Node>;
 
 /// Function that evaluates an operator.
-template <typename T, class RNG>
-using EvalFn =
-    std::function<T(const EvalInput<T> &input, const Children<T, RNG> &)>;
+using EvalFn = std::function<T(const EvalInput &input, const Children &)>;
 
 /// Function that converts an operator to string.
-template <typename T, class RNG>
-using StrFn = std::function<std::string(const Children<T, RNG> &)>;
+using StrFn = std::function<std::string(const Children &)>;
+
+/// Function that creates a new primitive.
+using PrimitiveFn = std::function<Primitive(RNG &rng)>;
 
 /// Pair mapping inputs to output.
-template <typename T> using Sample = std::pair<EvalInput<T>, T>;
+using Sample = std::pair<EvalInput, T>;
 
 /// Dataset of samples.
-template <typename T> using Dataset = std::vector<Sample<T>>;
+using Dataset = std::vector<Sample>;
 
 /// Represents an primitive.
-template <typename T, class RNG> struct Primitive {
+struct Primitive {
   int numRequiredChildren;
-  EvalFn<T, RNG> evalFn;
-  StrFn<T, RNG> strFn;
+  EvalFn evalFn;
+  StrFn strFn;
 
   operator bool() const { return evalFn && strFn; }
 
   Primitive() {}
 
-  Primitive(int numRequiredChildren, EvalFn<T, RNG> evalFn, StrFn<T, RNG> strFn)
+  Primitive(int numRequiredChildren, EvalFn evalFn, StrFn strFn)
       : numRequiredChildren(numRequiredChildren), evalFn(evalFn), strFn(strFn) {
   }
 };
-
-/// Function that creates a new primitive.
-template <typename T, class RNG>
-using PrimitiveFn = std::function<Primitive<T, RNG>(RNG &rng)>;
 
 /**
  * Represents the parameters used in the program.
  * TODO(renatoutsch): add accessors to always be sure populationSize is correct.
  */
-template <typename T, class RNG> struct Params {
+struct Params {
   /// RNG seed.
   unsigned seed;
 
@@ -98,15 +103,15 @@ template <typename T, class RNG> struct Params {
   bool elitism;
 
   /// Available function primitives.
-  std::vector<PrimitiveFn<T, RNG>> functions;
+  std::vector<PrimitiveFn> functions;
 
   /// Available terminal primitives.
-  std::vector<PrimitiveFn<T, RNG>> terminals;
+  std::vector<PrimitiveFn> terminals;
 
   Params(unsigned seed_, size_t numGenerations_, size_t populationSize_,
          size_t tournamentSize_, size_t maxHeight_, double crossoverProb_,
-         bool elitism_, const std::vector<PrimitiveFn<T, RNG>> &functions_,
-         const std::vector<PrimitiveFn<T, RNG>> &terminals_)
+         bool elitism_, const std::vector<PrimitiveFn> &functions_,
+         const std::vector<PrimitiveFn> &terminals_)
       : seed(seed_), numGenerations(numGenerations_),
         populationSize(populationSize_), tournamentSize(tournamentSize_),
         maxHeight(maxHeight_), crossoverProb(crossoverProb_), elitism(elitism_),
@@ -146,13 +151,13 @@ template <typename T, class RNG> struct Params {
  * A node is represented by it's current children and it's Primitive, which
  * represents what it does and the required number of children.
  */
-template <typename T, class RNG> class Node {
+class Node {
 
 public:
   /**
    * Creates a tree node from the given primitive.
    */
-  Node(const Primitive<T, RNG> &op = Primitive<T, RNG>())
+  Node(const Primitive &op = Primitive())
       : numRequiredChildren_(op.numRequiredChildren), evalFn_(op.evalFn),
         strFn_(op.strFn) {
     if (evalFn_) {
@@ -162,21 +167,19 @@ public:
   }
 
   /// Evaluates the value of the node.
-  T eval(const EvalInput<T> &input) const { return evalFn_(input, children_); }
+  T eval(const EvalInput &input) const { return evalFn_(input, children_); }
 
   /// Returns the string equivalent of the tree.
   std::string str() const { return strFn_(children_); }
 
   /// Replaces a given child.
-  void setChild(int i, const Node<T, RNG> &&newChild) {
-    children_[i] = newChild;
-  }
+  void setChild(int i, const Node &&newChild) { children_[i] = newChild; }
 
   /// Returns the child at index i.
-  const Node<T, RNG> &child(int i) const { return children_[i]; }
+  const Node &child(int i) const { return children_[i]; }
 
   /// Returns the mutable child at index i.
-  Node<T, RNG> &mutableChild(int i) { return children_[i]; }
+  Node &mutableChild(int i) { return children_[i]; }
 
   /// Number of children the node currently has.
   size_t numChildren() const { return children_.size(); }
@@ -198,9 +201,11 @@ public:
 
 private:
   int numRequiredChildren_;
-  EvalFn<T, RNG> evalFn_;
-  StrFn<T, RNG> strFn_;
-  Children<T, RNG> children_;
+  EvalFn evalFn_;
+  StrFn strFn_;
+  Children children_;
 };
+
+} // namespace repr
 
 #endif // !COMPNAT_TP1_REPRESENTATION_HPP

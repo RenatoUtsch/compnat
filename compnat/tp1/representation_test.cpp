@@ -23,13 +23,14 @@
 #include "primitives.hpp"
 
 namespace {
-using T = double;
-using RNG = std::mt19937;
+using repr::Node;
+using repr::Params;
+using repr::Primitive;
+using repr::RNG;
 
 TEST(ParamsTest, WorksCorrectly) {
-  Params<T, RNG> params(
-      42, 50, 8, 6, 5, 0.5, false, {primitives::sumFn<T, RNG>},
-      {primitives::makeVarTerm<T, RNG>(0), primitives::makeVarTerm<T, RNG>(1)});
+  Params params(42, 50, 8, 6, 5, 0.5, false, {primitives::sumFn},
+                {primitives::makeVarTerm(0), primitives::makeVarTerm(1)});
   EXPECT_EQ((unsigned)42, params.seed);
   EXPECT_EQ((size_t)50, params.numGenerations);
   EXPECT_EQ((size_t)8, params.populationSize);
@@ -42,20 +43,20 @@ TEST(ParamsTest, WorksCorrectly) {
 }
 
 TEST(ParamsTest, UpdatesPopulationSizeCorrectly) {
-  Params<T, RNG> params1(0, 0, 0, 0, 5, 0.8, false, {}, {});
+  Params params1(0, 0, 0, 0, 5, 0.8, false, {}, {});
   EXPECT_EQ((size_t)4, params1.populationSize);
 
-  Params<T, RNG> params2(0, 0, 15, 0, 8, 0.8, false, {}, {});
+  Params params2(0, 0, 15, 0, 8, 0.8, false, {}, {});
   EXPECT_EQ((size_t)28, params2.populationSize);
 }
 
 TEST(NodeTest, AcceptsValidPrimitiveAndGivesCorrectResults) {
   RNG rng(0);
-  Node<T, RNG> node(primitives::sumFn<T, RNG>(rng));
+  Node node(primitives::sumFn(rng));
   EXPECT_EQ((size_t)2, node.numChildren());
 
-  node.setChild(0, primitives::makeVarTerm<T, RNG>(0)(rng));
-  node.setChild(1, primitives::constTerm<T, RNG>(rng));
+  node.setChild(0, primitives::makeVarTerm(0)(rng));
+  node.setChild(1, primitives::constTerm(rng));
   EXPECT_EQ("(x0 + 0.185689)", node.str());
   EXPECT_FLOAT_EQ(42.185689, node.eval({{42, 0}}));
   EXPECT_FALSE(node.isTerminal());

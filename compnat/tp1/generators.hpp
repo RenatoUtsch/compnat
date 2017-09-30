@@ -17,43 +17,21 @@
 #ifndef COMPNAT_TP1_GENERATORS_HPP
 #define COMPNAT_TP1_GENERATORS_HPP
 
-#include <random>
-#include <stack>
-#include <tuple>
 #include <vector>
-
-#include <glog/logging.h>
 
 #include "representation.hpp"
 
 namespace generators {
 
 /// Returns a random primitive.
-template <typename T, class RNG>
-Primitive<T, RNG>
-randomPrimitive(RNG &rng,
-                const std::vector<PrimitiveFn<T, RNG>> &primitiveFns) {
-  std::uniform_int_distribution<size_t> distr(0, primitiveFns.size() - 1);
-  const auto primitiveFn = distr(rng);
-
-  return primitiveFns[primitiveFn](rng);
-}
+repr::Primitive
+randomPrimitive(repr::RNG &rng,
+                const std::vector<repr::PrimitiveFn> &primitiveFns);
 
 /// Returns a random function or terminal.
-template <typename T, class RNG>
-Primitive<T, RNG>
-randomPrimitive(RNG &rng, const std::vector<PrimitiveFn<T, RNG>> &functions,
-                const std::vector<PrimitiveFn<T, RNG>> &terminals) {
-  const auto numPrimitiveFns = functions.size() + terminals.size();
-  std::uniform_int_distribution<size_t> distr(0, numPrimitiveFns - 1);
-  const auto primitiveFn = distr(rng);
-
-  if (primitiveFn < functions.size()) {
-    return functions[primitiveFn](rng);
-  } else {
-    return terminals[primitiveFn - functions.size()](rng);
-  }
-}
+repr::Primitive
+randomPrimitive(repr::RNG &rng, const std::vector<repr::PrimitiveFn> &functions,
+                const std::vector<repr::PrimitiveFn> &terminals);
 
 /**
  * Implements the grow method for creating trees.
@@ -62,39 +40,9 @@ randomPrimitive(RNG &rng, const std::vector<PrimitiveFn<T, RNG>> &functions,
  * @param functions Function primitives.
  * @param terminals Terminal primitives.
  */
-template <typename T, class RNG>
-Node<T, RNG> grow(RNG &rng, size_t maxHeight,
-                  const std::vector<PrimitiveFn<T, RNG>> &functions,
-                  const std::vector<PrimitiveFn<T, RNG>> &terminals) {
-  CHECK(maxHeight > 0);
-  if (maxHeight == 1) {
-    return randomPrimitive(rng, terminals);
-  }
-  Node<T, RNG> root(randomPrimitive(rng, functions, terminals));
-
-  std::stack<std::tuple<Node<T, RNG> &, size_t>> nodes;
-  nodes.emplace(root, 1);
-  while (!nodes.empty()) {
-    auto[node, height] = nodes.top();
-    nodes.pop();
-
-    if (node.isTerminal()) {
-      continue;
-    } else if (height >= maxHeight - 1) {
-      for (size_t i = 0; i < node.numChildren(); ++i) {
-        node.setChild(i, randomPrimitive(rng, terminals));
-      }
-      continue;
-    }
-
-    for (size_t i = 0; i < node.numChildren(); ++i) {
-      node.setChild(i, randomPrimitive(rng, functions, terminals));
-      nodes.emplace(node.mutableChild(i), height + 1);
-    }
-  }
-
-  return root;
-}
+repr::Node grow(repr::RNG &rng, size_t maxHeight,
+                const std::vector<repr::PrimitiveFn> &functions,
+                const std::vector<repr::PrimitiveFn> &terminals);
 
 /**
  * Implements the full method for creating trees.
@@ -103,37 +51,9 @@ Node<T, RNG> grow(RNG &rng, size_t maxHeight,
  * @param functions Function primitives.
  * @param terminals Terminal primitives.
  */
-template <typename T, class RNG>
-Node<T, RNG> full(RNG &rng, size_t maxHeight,
-                  const std::vector<PrimitiveFn<T, RNG>> &functions,
-                  const std::vector<PrimitiveFn<T, RNG>> &terminals) {
-  CHECK(maxHeight > 0);
-  if (maxHeight == 1) {
-    return randomPrimitive(rng, terminals);
-  }
-  Node<T, RNG> root(randomPrimitive(rng, functions));
-
-  std::stack<std::tuple<Node<T, RNG> &, size_t>> nodes;
-  nodes.emplace(root, 1);
-  while (!nodes.empty()) {
-    auto[node, height] = nodes.top();
-    nodes.pop();
-
-    if (height >= maxHeight - 1) {
-      for (size_t i = 0; i < node.numChildren(); ++i) {
-        node.setChild(i, randomPrimitive(rng, terminals));
-      }
-      continue;
-    }
-
-    for (size_t i = 0; i < node.numChildren(); ++i) {
-      node.setChild(i, randomPrimitive(rng, functions));
-      nodes.emplace(node.mutableChild(i), height + 1);
-    }
-  }
-
-  return root;
-}
+repr::Node full(repr::RNG &rng, size_t maxHeight,
+                const std::vector<repr::PrimitiveFn> &functions,
+                const std::vector<repr::PrimitiveFn> &terminals);
 
 /**
  * Generates trees using the ramped half and half method.
@@ -141,24 +61,8 @@ Node<T, RNG> full(RNG &rng, size_t maxHeight,
  *   a multiple of (maxHeight - 1).
  * @param rng Random number generator.
  */
-template <typename T, class RNG>
-std::vector<Node<T, RNG>> rampedHalfAndHalf(RNG &rng,
-                                            const Params<T, RNG> &params) {
-  CHECK(params.populationSize % 2 == 0);
-  CHECK(params.populationSize % (params.maxHeight - 1) == 0);
-
-  const size_t halfPopulationPerHeight =
-      params.populationSize / (params.maxHeight - 1) / 2;
-  std::vector<Node<T, RNG>> nodes;
-  for (size_t i = 2; i <= params.maxHeight; ++i) {
-    for (size_t j = 0; j < halfPopulationPerHeight; ++j) {
-      nodes.push_back(grow(rng, i, params.functions, params.terminals));
-      nodes.push_back(full(rng, i, params.functions, params.terminals));
-    }
-  }
-
-  return nodes;
-}
+std::vector<repr::Node> rampedHalfAndHalf(repr::RNG &rng,
+                                          const repr::Params &params);
 
 } // namespace generators
 

@@ -37,9 +37,6 @@ DEFINE_double(crossover_prob, 0.9,
 DEFINE_bool(elitism, false, "Whether to use elitism or not.");
 
 int main(int argc, char **argv) {
-  using T = double;
-  using RNG = std::mt19937;
-
   gflags::ParseCommandLineFlags(&argc, &argv, true);
   google::InitGoogleLogging(argv[0]);
   google::InstallFailureSignalHandler();
@@ -49,28 +46,28 @@ int main(int argc, char **argv) {
     FLAGS_seed = rd();
   }
 
-  const auto &trainDataset = parser::loadDataset<T>(FLAGS_dataset_train);
-  const auto &testDataset = parser::loadDataset<T>(FLAGS_dataset_test);
+  const auto &trainDataset = parser::loadDataset(FLAGS_dataset_train);
+  const auto &testDataset = parser::loadDataset(FLAGS_dataset_test);
 
-  const std::vector<PrimitiveFn<T, RNG>> functions = {
-      primitives::sumFn<T, RNG>,
-      primitives::subFn<T, RNG>,
-      primitives::multFn<T, RNG>,
-      primitives::divFn<T, RNG>,
+  const std::vector<repr::PrimitiveFn> functions = {
+      primitives::sumFn,
+      primitives::subFn,
+      primitives::multFn,
+      primitives::divFn,
   };
 
   // Add the correct number of variable terminals.
-  std::vector<PrimitiveFn<T, RNG>> terminals;
-  terminals.push_back(primitives::constTerm<T, RNG>);
+  std::vector<repr::PrimitiveFn> terminals;
+  terminals.push_back(primitives::constTerm);
   const auto &datasetInput = trainDataset[0].first;
   for (size_t i = 0; i < datasetInput.size(); ++i) {
-    terminals.push_back(primitives::makeVarTerm<T, RNG>(i));
+    terminals.push_back(primitives::makeVarTerm(i));
   }
 
-  Params<T, RNG> params(FLAGS_seed, FLAGS_num_generations,
-                        FLAGS_population_size, FLAGS_tournament_size,
-                        FLAGS_max_height, FLAGS_crossover_prob, FLAGS_elitism,
-                        functions, terminals);
+  repr::Params params(FLAGS_seed, FLAGS_num_generations, FLAGS_population_size,
+                      FLAGS_tournament_size, FLAGS_max_height,
+                      FLAGS_crossover_prob, FLAGS_elitism, functions,
+                      terminals);
 
   simulation::simulate(params, trainDataset, testDataset);
 

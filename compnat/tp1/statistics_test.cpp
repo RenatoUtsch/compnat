@@ -28,28 +28,26 @@
 #include "threading.hpp"
 
 namespace {
-using T = double;
-using RNG = std::mt19937;
 using stats::Statistics;
 using testing::ElementsAre;
 
-std::vector<Node<T, RNG>> generatePopulation() {
-  RNG rng(0);
-  Node<T, RNG> node1(primitives::sumFn<T>(rng));
-  node1.setChild(0, Node<T, RNG>(primitives::makeVarTerm<T, RNG>(0)(rng)));
-  node1.setChild(1, Node<T, RNG>(primitives::makeVarTerm<T, RNG>(1)(rng)));
+std::vector<repr::Node> generatePopulation() {
+  repr::RNG rng(0);
+  repr::Node node1(primitives::sumFn(rng));
+  node1.setChild(0, repr::Node(primitives::makeVarTerm(0)(rng)));
+  node1.setChild(1, repr::Node(primitives::makeVarTerm(1)(rng)));
 
-  Node<T, RNG> node2(primitives::logFn<T>(rng));
-  node2.setChild(0, Node<T, RNG>(primitives::makeVarTerm<T, RNG>(0)(rng)));
+  repr::Node node2(primitives::logFn(rng));
+  node2.setChild(0, repr::Node(primitives::makeVarTerm(0)(rng)));
 
-  Node<T, RNG> node3(Node<T, RNG>(primitives::makeVarTerm<T, RNG>(0)(rng)));
+  repr::Node node3(repr::Node(primitives::makeVarTerm(0)(rng)));
 
   return {std::move(node1), std::move(node2), std::move(node3)};
 }
 
 TEST(FitnessTest, SingleWorksCorrectly) {
   const auto &population = generatePopulation();
-  const Dataset<T> dataset = {
+  const repr::Dataset dataset = {
       {{12, 2}, 15},
       {{15, 4}, 21},
   };
@@ -60,7 +58,7 @@ TEST(FitnessTest, SingleWorksCorrectly) {
 
 TEST(FitnessTest, WorksCorrectly) {
   const auto &population = generatePopulation();
-  const Dataset<T> dataset = {
+  const repr::Dataset dataset = {
       {{12, 2}, 15},
       {{15, 4}, 21},
   };
@@ -74,13 +72,12 @@ TEST(FitnessTest, WorksCorrectly) {
 }
 
 TEST(FitnessTest, GeneratesExpectedValue) {
-  RNG rng;
+  repr::RNG rng;
 
   const auto &dataset =
-      parser::loadDataset<T>("compnat/tp1/datasets/keijzer-10-test.csv");
+      parser::loadDataset("compnat/tp1/datasets/keijzer-10-test.csv");
 
-  const auto individual =
-      Node<T, RNG>(primitives::literalTerm<T, RNG>(0.791453)(rng));
+  const auto individual = repr::Node(primitives::literalTerm(0.791453)(rng));
   const auto fitness = stats::fitness(individual, dataset);
   EXPECT_FLOAT_EQ(0.089933448, fitness);
 }
@@ -94,31 +91,31 @@ TEST(SizesTest, WorksCorrectly) {
 
 TEST(StatisticsTest, SingleGenerationPerformanceBenchmark) {
   const auto &dataset =
-      parser::loadDataset<T>("compnat/tp1/datasets/unit_test.csv");
+      parser::loadDataset("compnat/tp1/datasets/unit_test.csv");
 
   // Params for a big test.
-  Params<T, RNG> params( // Improve formatting
+  repr::Params params( // Improve formatting
       0, 1, 600, 7, 7, 0.9, false,
       {
-          primitives::sumFn<T, RNG>,
-          primitives::subFn<T, RNG>,
-          primitives::multFn<T, RNG>,
-          primitives::divFn<T, RNG>,
+          primitives::sumFn,
+          primitives::subFn,
+          primitives::multFn,
+          primitives::divFn,
       },
       {
-          primitives::constTerm<T, RNG>,
-          primitives::makeVarTerm<T, RNG>(0),
-          primitives::makeVarTerm<T, RNG>(1),
-          primitives::makeVarTerm<T, RNG>(2),
-          primitives::makeVarTerm<T, RNG>(3),
+          primitives::constTerm,
+          primitives::makeVarTerm(0),
+          primitives::makeVarTerm(1),
+          primitives::makeVarTerm(2),
+          primitives::makeVarTerm(3),
       });
 
-  RNG rng;
+  repr::RNG rng;
   const auto &population = generators::rampedHalfAndHalf(rng, params);
   EXPECT_EQ((size_t)600, population.size());
 
   threading::ThreadPool pool;
-  const auto &stats = Statistics<T, RNG>(pool, population, dataset);
+  const auto &stats = Statistics(pool, population, dataset);
   EXPECT_EQ((size_t)600, stats.fitness.size());
   EXPECT_EQ((size_t)600, stats.sizes.size());
 }

@@ -17,125 +17,35 @@
 #ifndef COMPNAT_TP1_PRIMITIVES_HPP
 #define COMPNAT_TP1_PRIMITIVES_HPP
 
-#include <random>
 #include <string>
 
 #include "representation.hpp"
-#include "utils.hpp"
 
 namespace primitives {
 
 /// Sum function.
-template <typename T, class RNG>
-Primitive<T, RNG> sumFn([[maybe_unused]] RNG &rng) {
-  return Primitive<T, RNG>( // Keep formatting
-      2,
-      [](const auto &input, const auto &children) {
-        return children[0].eval(input) + children[1].eval(input);
-      },
-      [](const auto &children) {
-        return utils::strCat('(', children[0].str(), " + ", children[1].str(),
-                             ')');
-      });
-}
+repr::Primitive sumFn([[maybe_unused]] repr::RNG &rng);
 
 /// Subtraction function.
-template <typename T, class RNG>
-Primitive<T, RNG> subFn([[maybe_unused]] RNG &rng) {
-  return Primitive<T, RNG>( // Keep formatting
-      2,
-      [](const auto &input, const auto &children) {
-        return children[0].eval(input) - children[1].eval(input);
-      },
-      [](const auto &children) {
-        return utils::strCat('(', children[0].str(), " - ", children[1].str(),
-                             ')');
-      });
-}
+repr::Primitive subFn([[maybe_unused]] repr::RNG &rng);
 
 /// Multiplication function.
-template <typename T, class RNG>
-Primitive<T, RNG> multFn([[maybe_unused]] RNG &rng) {
-  return Primitive<T, RNG>( // Keep formatting
-      2,
-      [](const auto &input, const auto &children) {
-        return children[0].eval(input) * children[1].eval(input);
-      },
-      [](const auto &children) {
-        return utils::strCat('(', children[0].str(), " * ", children[1].str(),
-                             ')');
-      });
-}
+repr::Primitive multFn([[maybe_unused]] repr::RNG &rng);
 
 /// Division function. Returns 0 if division is by 0.
-template <typename T, class RNG>
-Primitive<T, RNG> divFn([[maybe_unused]] RNG &rng) {
-  return Primitive<T, RNG>( // Keep formatting
-      2,
-      [](const auto &input, const auto &children) {
-        return utils::safeDiv(children[0].eval(input), children[1].eval(input));
-      },
-      [](const auto &children) {
-        return utils::strCat('(', children[0].str(), " / ", children[1].str(),
-                             ')');
-      });
-}
+repr::Primitive divFn([[maybe_unused]] repr::RNG &rng);
 
 /// Logarithm function.
-template <typename T, class RNG>
-Primitive<T, RNG> logFn([[maybe_unused]] RNG &rng) {
-  return Primitive<T, RNG>( // Keep formatting
-      1,
-      [](const auto &input, const auto &children) {
-        return std::log2(children[0].eval(input));
-      },
-      [](const auto &children) {
-        return utils::strCat("log2(", children[0].str(), ')');
-      });
-}
+repr::Primitive logFn([[maybe_unused]] repr::RNG &rng);
 
-/// Constant terminal. Returns a random value between 0 and 1.
-template <typename T, class RNG> Primitive<T, RNG> constTerm(RNG &rng) {
-  std::uniform_real_distribution<T> distr(-1, 1);
-  const T value = distr(rng);
-
-  return Primitive<T, RNG>( // Keep formatting
-      0,
-      [value]([[maybe_unused]] const auto &input,
-              [[maybe_unused]] const auto &children) { return value; },
-      [value]([[maybe_unused]] const auto &children) {
-        return utils::strCat(value);
-      });
-}
+/// Constant terminal. Returns a random value between -1 and 1.
+repr::Primitive constTerm(repr::RNG &rng);
 
 /// Literal terminal. Returns the given input value.
-template <typename T, class RNG>
-std::function<Primitive<T, RNG>(RNG &)> literalTerm(T value) {
-  return [value]([[maybe_unused]] auto &rng) {
-    return Primitive<T, RNG>( // Keep formatting
-        0,
-        [value]([[maybe_unused]] const auto &input,
-                [[maybe_unused]] const auto &children) { return value; },
-        [value]([[maybe_unused]] const auto &children) {
-          return utils::strCat(value);
-        });
-  };
-}
+std::function<repr::Primitive(repr::RNG &)> literalTerm(repr::T value);
 
 /// Variable terminal. Returns the value of the given variable.
-template <typename T, class RNG>
-std::function<Primitive<T, RNG>(RNG &)> makeVarTerm(size_t var) {
-  return [var]([[maybe_unused]] auto &rng) {
-    return Primitive<T, RNG>( // Keep formatting
-        0,
-        [var](const auto &input, [[maybe_unused]] const auto &children) {
-          return input[var];
-        },
-        [var]([[maybe_unused]] const auto &children) {
-          return utils::strCat("x", var);
-        });
-  };
-}
+std::function<repr::Primitive(repr::RNG &)> makeVarTerm(size_t var);
 
 } // namespace primitives
 

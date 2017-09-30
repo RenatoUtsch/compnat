@@ -30,6 +30,7 @@ cc_binary(
 
 cc_library(
     name = "generators",
+    srcs = ["generators.cpp"],
     hdrs = ["generators.hpp"],
     copts = COMPNAT_CPP_COPTS,
     deps = [
@@ -52,6 +53,7 @@ cc_test(
 
 cc_library(
     name = "operators",
+    srcs = ["operators.cpp"],
     hdrs = ["operators.hpp"],
     copts = COMPNAT_CPP_COPTS,
     deps = [
@@ -80,6 +82,7 @@ cc_test(
 
 cc_library(
     name = "parser",
+    srcs = ["parser.cpp"],
     hdrs = ["parser.hpp"],
     copts = COMPNAT_CPP_COPTS,
     deps = [
@@ -103,9 +106,11 @@ cc_test(
 
 cc_library(
     name = "primitives",
+    srcs = ["primitives.cpp"],
     hdrs = ["primitives.hpp"],
     copts = COMPNAT_CPP_COPTS,
     deps = [
+        ":representation",
         ":utils",
     ],
 )
@@ -146,6 +151,7 @@ cc_test(
 
 cc_library(
     name = "simulation",
+    srcs = ["simulation.cpp"],
     hdrs = ["simulation.hpp"],
     copts = COMPNAT_CPP_COPTS,
     deps = [
@@ -175,6 +181,7 @@ cc_test(
 
 cc_library(
     name = "statistics",
+    srcs = ["statistics.cpp"],
     hdrs = ["statistics.hpp"],
     copts = COMPNAT_CPP_COPTS,
     deps = [

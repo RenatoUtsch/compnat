@@ -34,8 +34,7 @@ TEST(SplitLineTest, WorksCorrectly) {
 }
 
 TEST(LoadDatasetTest, WorksCorrectly) {
-  const auto &dataset =
-      loadDataset<double>("compnat/tp1/datasets/unit_test.csv");
+  const auto &dataset = loadDataset("compnat/tp1/datasets/unit_test.csv");
   ASSERT_EQ((size_t)2, dataset.size());
 
   auto & [ input0, expected0 ] = dataset[0];
