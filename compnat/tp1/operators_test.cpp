@@ -42,7 +42,7 @@ TEST(CrossoverTest, WorksCorrectly) {
   repr::RNG rng;
 
   // For params.maxHeight.
-  repr::Params params(0, 0, 5, 0, 3, 0.8, false, {}, {});
+  repr::Params params(0, 0, 0, 5, 0, 3, 0.8, false, {}, {});
 
   repr::Node node0(primitives::sumFn(rng));
   node0.setChild(0, primitives::makeVarTerm(0)(rng));
@@ -69,7 +69,7 @@ TEST(MutationTest, WorksCorrectly) {
 
   // For params.maxHeight, functions and terminals.
   repr::Params params( // Keep formatting
-      0, 0, 4, 0, 3, 0.8, false,
+      0, 0, 0, 4, 0, 3, 0.8, false,
       {primitives::sumFn, primitives::subFn, primitives::multFn,
        primitives::divFn, primitives::logFn},
       {primitives::makeVarTerm(0), primitives::makeVarTerm(1)});
@@ -93,7 +93,7 @@ TEST(MutationTest, OneElementTree) {
 
   // For params.maxHeight, functions and terminals.
   repr::Params params( // Keep formatting
-      0, 0, 4, 0, 3, 0.8, false,
+      0, 0, 0, 4, 0, 3, 0.8, false,
       {primitives::sumFn, primitives::subFn, primitives::multFn,
        primitives::divFn, primitives::logFn},
       {primitives::makeVarTerm(0), primitives::makeVarTerm(1)});
@@ -118,7 +118,7 @@ TEST(NewGenerationTest, WorksCorrectly) {
 
   // For params.maxHeight, functions and terminals.
   repr::Params params( // Keep formatting
-      0, 10, 60, 5, 7, 0.9, true,
+      0, 0, 10, 60, 5, 7, 0.9, true,
       {
           primitives::sumFn,
           primitives::subFn,

@@ -29,9 +29,10 @@ using repr::Primitive;
 using repr::RNG;
 
 TEST(ParamsTest, WorksCorrectly) {
-  Params params(42, 50, 8, 6, 5, 0.5, false, {primitives::sumFn},
+  Params params(42, 3, 50, 8, 6, 5, 0.5, false, {primitives::sumFn},
                 {primitives::makeVarTerm(0), primitives::makeVarTerm(1)});
   EXPECT_EQ((unsigned)42, params.seed);
+  EXPECT_EQ((unsigned)3, params.numInstances);
   EXPECT_EQ((size_t)50, params.numGenerations);
   EXPECT_EQ((size_t)8, params.populationSize);
   EXPECT_EQ((size_t)6, params.tournamentSize);
@@ -43,10 +44,10 @@ TEST(ParamsTest, WorksCorrectly) {
 }
 
 TEST(ParamsTest, UpdatesPopulationSizeCorrectly) {
-  Params params1(0, 0, 0, 0, 5, 0.8, false, {}, {});
+  Params params1(0, 0, 0, 0, 0, 5, 0.8, false, {}, {});
   EXPECT_EQ((size_t)4, params1.populationSize);
 
-  Params params2(0, 0, 15, 0, 8, 0.8, false, {}, {});
+  Params params2(0, 0, 0, 15, 0, 8, 0.8, false, {}, {});
   EXPECT_EQ((size_t)28, params2.populationSize);
 }
 

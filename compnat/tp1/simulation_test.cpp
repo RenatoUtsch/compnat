@@ -32,7 +32,7 @@ TEST(NewGenerationTest, WorksCorrectly) {
 
   // For params.maxHeight, functions and terminals.
   repr::Params params( // Keep formatting
-      0, 10, 60, 5, 7, 0.9, false,
+      1, 0, 10, 60, 5, 7, 0.9, false,
       {
           primitives::sumFn,
           primitives::subFn,

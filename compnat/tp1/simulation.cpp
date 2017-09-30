@@ -30,20 +30,26 @@ void simulate(const repr::Params &params, const repr::Dataset &trainDataset,
   repr::RNG rng(params.seed);
   threading::ThreadPool pool;
 
-  LOG(INFO) << "";
-  LOG(INFO) << "Generation 0";
-  auto population = generators::rampedHalfAndHalf(rng, params);
-  auto stats = stats::Statistics(pool, population, trainDataset);
-  stats::ImprovementMetadata metadata;
-  for (size_t i = 1; i <= params.numGenerations; ++i) {
-    LOG(INFO) << "Generation " << i;
-    std::tie(population, metadata) =
-        operators::newGeneration(rng, params, population, stats);
-    stats = stats::Statistics(pool, population, trainDataset, metadata);
-  }
+  for (size_t i = 1; i <= params.numInstances; ++i) {
+    LOG(INFO) << "";
+    LOG(INFO) << "";
+    LOG(INFO) << "INSTANCE " << i;
+    LOG(INFO) << "";
+    LOG(INFO) << "";
+    LOG(INFO) << "Generation 0";
+    auto population = generators::rampedHalfAndHalf(rng, params);
+    auto stats = stats::Statistics(pool, population, trainDataset);
+    stats::ImprovementMetadata metadata;
+    for (size_t j = 1; j <= params.numGenerations; ++j) {
+      LOG(INFO) << "Generation " << j;
+      std::tie(population, metadata) =
+          operators::newGeneration(rng, params, population, stats);
+      stats = stats::Statistics(pool, population, trainDataset, metadata);
+    }
 
-  LOG(INFO) << "Test statistics";
-  auto testStats = stats::Statistics(pool, population, testDataset);
+    LOG(INFO) << "Test statistics";
+    auto testStats = stats::Statistics(pool, population, testDataset);
+  }
 }
 
 } // namespace simulation

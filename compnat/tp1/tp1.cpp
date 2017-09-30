@@ -64,10 +64,10 @@ int main(int argc, char **argv) {
     terminals.push_back(primitives::makeVarTerm(i));
   }
 
-  repr::Params params(FLAGS_seed, FLAGS_num_generations, FLAGS_population_size,
-                      FLAGS_tournament_size, FLAGS_max_height,
-                      FLAGS_crossover_prob, FLAGS_elitism, functions,
-                      terminals);
+  repr::Params params(FLAGS_seed, FLAGS_num_instances, FLAGS_num_generations,
+                      FLAGS_population_size, FLAGS_tournament_size,
+                      FLAGS_max_height, FLAGS_crossover_prob, FLAGS_elitism,
+                      functions, terminals);
 
   simulation::simulate(params, trainDataset, testDataset);
 

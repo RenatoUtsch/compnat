@@ -95,7 +95,7 @@ TEST(StatisticsTest, SingleGenerationPerformanceBenchmark) {
 
   // Params for a big test.
   repr::Params params( // Improve formatting
-      0, 1, 600, 7, 7, 0.9, false,
+      1, 0, 1, 600, 7, 7, 0.9, false,
       {
           primitives::sumFn,
           primitives::subFn,
