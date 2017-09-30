@@ -66,7 +66,7 @@ struct Primitive {
 
   operator bool() const { return evalFn && strFn; }
 
-  Primitive() {}
+  Primitive() : numRequiredChildren(0) {}
 
   Primitive(int numRequiredChildren, EvalFn evalFn, StrFn strFn)
       : numRequiredChildren(numRequiredChildren), evalFn(evalFn), strFn(strFn) {

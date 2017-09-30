@@ -47,7 +47,6 @@ _WARNINGS_COPTS = system_select({
         "-Wno-unused-function",
         "-Wno-unused-variable",
         "-Wno-sign-compare",
-        "-Wno-invalid-noreturn",
     ],
 })
 
@@ -79,7 +78,6 @@ cc_library(
         "@com_github_gflags_gflags//:gflags",
     ],
     includes = [
-        ".",
         "src",
     ],
     copts = _THREAD_COPTS + _WARNINGS_COPTS,
