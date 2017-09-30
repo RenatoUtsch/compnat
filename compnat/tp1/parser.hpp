@@ -23,6 +23,9 @@
 
 namespace parser {
 
+// https://stackoverflow.com/a/7408245/1099010
+std::vector<std::string> splitLine(const std::string &text, char sep);
+
 /**
  * Loads a dataset from a CSV file.
  */

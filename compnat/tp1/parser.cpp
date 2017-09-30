@@ -22,10 +22,9 @@
 
 #include "utils.hpp"
 
-namespace {
+namespace parser {
 
-// https://stackoverflow.com/a/7408245/1099010
-std::vector<std::string> splitLine_(const std::string &text, char sep) {
+std::vector<std::string> splitLine(const std::string &text, char sep) {
   std::vector<std::string> tokens;
   std::size_t start = 0, end = 0;
   while ((end = text.find(sep, start)) != std::string::npos) {
@@ -36,10 +35,6 @@ std::vector<std::string> splitLine_(const std::string &text, char sep) {
   return tokens;
 }
 
-} // namespace
-
-namespace parser {
-
 repr::Dataset loadDataset(const std::string &filename) {
   repr::Dataset dataset;
 
@@ -48,7 +43,7 @@ repr::Dataset loadDataset(const std::string &filename) {
 
   std::string line;
   while (std::getline(in, line)) {
-    const auto &tokens = splitLine_(line, ',');
+    const auto &tokens = splitLine(line, ',');
     const size_t numInputs = tokens.size() - 1;
 
     repr::EvalInput input(numInputs);
