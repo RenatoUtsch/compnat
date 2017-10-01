@@ -136,6 +136,13 @@ private:
   void printStats_(const std::string &statsName);
 };
 
+/**
+ * Salves the execution results to the file specified in params.
+ */
+void saveResults(const repr::Params &params,
+                 const std::vector<std::vector<Statistics>> &allTrainStats,
+                 const std::vector<std::vector<Statistics>> &allTestStats);
+
 } // namespace stats
 
 #endif // !COMPNAT_TP1_STATISTICS_HPP

@@ -17,13 +17,138 @@
 #include "statistics.hpp"
 
 #include <cmath>
+#include <fstream>
 #include <unordered_set>
 
 #include <glog/logging.h>
 
+#include "compnat/tp1/results/results_generated.h"
 #include "utils.hpp"
 
 namespace stats {
+namespace {
+
+flatbuffers::Offset<results::Params>
+buildParams_(flatbuffers::FlatBufferBuilder &builder,
+             const repr::Params &params) {
+  results::ParamsBuilder paramsBuilder(builder);
+  paramsBuilder.add_seed(params.seed);
+  paramsBuilder.add_numInstances(params.numInstances);
+  paramsBuilder.add_numGenerations(params.numGenerations);
+  paramsBuilder.add_populationSize(params.populationSize);
+  paramsBuilder.add_tournamentSize(params.tournamentSize);
+  paramsBuilder.add_maxHeight(params.maxHeight);
+  paramsBuilder.add_crossoverProb(params.crossoverProb);
+  paramsBuilder.add_elitism(params.elitism);
+  paramsBuilder.add_alwaysTest(params.alwaysTest);
+  return paramsBuilder.Finish();
+}
+
+results::meanStddev
+aggregateParam_(const std::vector<std::vector<Statistics>> &allStats,
+                size_t generation,
+                std::function<double(const Statistics &)> &&accessor) {
+  double mean = 0;
+  for (size_t i = 0; i < allStats.size(); ++i) {
+    mean += accessor(allStats[i][generation]);
+  }
+  mean /= allStats.size();
+
+  double stddev = 0;
+  for (size_t i = 0; i < allStats.size(); ++i) {
+    stddev += std::pow(accessor(allStats[i][generation]) - mean, 2);
+  }
+  stddev = std::sqrt(stddev / allStats.size());
+
+  return results::meanStddev(mean, stddev);
+}
+
+std::tuple<flatbuffers::Offset<flatbuffers::String>, double, size_t>
+bestIndividual_(flatbuffers::FlatBufferBuilder &builder,
+                const std::vector<std::vector<Statistics>> &allStats,
+                size_t generation) {
+  size_t best = 0;
+  for (size_t i = 0; i < allStats.size(); ++i) {
+    if (allStats[i][generation].bestFitness >
+        allStats[best][generation].bestFitness) {
+      best = i;
+    }
+  }
+
+  return {builder.CreateString(allStats[best][generation].bestStr),
+          allStats[best][generation].bestFitness,
+          allStats[best][generation].bestSize};
+}
+
+flatbuffers::Offset<results::AggregatedStats>
+buildAggregatedStats_(flatbuffers::FlatBufferBuilder &builder,
+                      const std::vector<std::vector<Statistics>> &allStats,
+                      size_t generation) {
+  auto bestFitness = aggregateParam_(
+      allStats, generation, [](const auto &s) { return s.bestFitness; });
+  auto bestSize = aggregateParam_(allStats, generation,
+                                  [](const auto &s) { return s.bestSize; });
+  auto worstFitness = aggregateParam_(
+      allStats, generation, [](const auto &s) { return s.worstFitness; });
+  auto worstSize = aggregateParam_(allStats, generation,
+                                   [](const auto &s) { return s.worstSize; });
+  auto avgFitness = aggregateParam_(allStats, generation,
+                                    [](const auto &s) { return s.avgFitness; });
+  auto avgSize = aggregateParam_(allStats, generation,
+                                 [](const auto &s) { return s.avgSize; });
+  auto numRepeated = aggregateParam_(
+      allStats, generation, [](const auto &s) { return s.numRepeated; });
+  auto numCrossBetter = aggregateParam_(
+      allStats, generation, [](const auto &s) { return s.numCrossBetter; });
+  auto numCrossWorse = aggregateParam_(
+      allStats, generation, [](const auto &s) { return s.numCrossWorse; });
+  auto numMutBetter = aggregateParam_(
+      allStats, generation, [](const auto &s) { return s.numMutBetter; });
+  auto numMutWorse = aggregateParam_(
+      allStats, generation, [](const auto &s) { return s.numMutWorse; });
+  auto[bestIndividualStr, bestIndividualFitness, bestIndividualSize] =
+      bestIndividual_(builder, allStats, generation);
+
+  results::AggregatedStatsBuilder statsBuilder(builder);
+  statsBuilder.add_bestFitness(&bestFitness);
+  statsBuilder.add_bestSize(&bestSize);
+  statsBuilder.add_worstFitness(&worstFitness);
+  statsBuilder.add_worstSize(&worstSize);
+  statsBuilder.add_avgFitness(&avgFitness);
+  statsBuilder.add_avgSize(&avgSize);
+  statsBuilder.add_numRepeated(&numRepeated);
+  statsBuilder.add_numCrossBetter(&numCrossBetter);
+  statsBuilder.add_numCrossWorse(&numCrossWorse);
+  statsBuilder.add_numMutBetter(&numMutBetter);
+  statsBuilder.add_numMutWorse(&numMutWorse);
+  statsBuilder.add_bestIndividualStr(bestIndividualStr);
+  statsBuilder.add_bestIndividualFitness(bestIndividualFitness);
+  statsBuilder.add_bestIndividualSize(bestIndividualSize);
+  return statsBuilder.Finish();
+}
+
+flatbuffers::Offset<
+    flatbuffers::Vector<flatbuffers::Offset<results::AggregatedStats>>>
+buildAllStats_(flatbuffers::FlatBufferBuilder &builder,
+               const std::vector<std::vector<Statistics>> &allStats) {
+  std::vector<flatbuffers::Offset<results::AggregatedStats>> aggregatedStats;
+  for (size_t i = 0; i < allStats[0].size(); ++i) {
+    aggregatedStats.push_back(buildAggregatedStats_(builder, allStats, i));
+  }
+
+  return builder.CreateVector(aggregatedStats);
+}
+
+void saveToFile_(const std::string &outputFile, const uint8_t *buf,
+                 size_t size) {
+  std::ofstream out(outputFile, std::ofstream::out | std::ofstream::trunc |
+                                    std::ofstream::binary);
+  CHECK(out.is_open());
+
+  out.write((const char *)buf, size);
+}
+
+} // namespace
 
 double fitness(const repr::Node &individual, const repr::Dataset &dataset) {
   double error = 0;
@@ -56,27 +181,6 @@ std::vector<size_t> sizes(const std::vector<repr::Node> &population) {
 
   return sizes;
 }
-
-#if 0
-flatbuffers::Offset<stats::GenerationStats>
-buildGenerationStats(flatbuffers::FlatBufferBuilder &builder,
-                     const Statistics &stats) {
-  stats::GenerationStatsBuilder statsBuilder(builder);
-  statsBuilder.add_bestFitness(stats.bestFitness);
-  statsBuilder.add_bestSize(stats.bestSize);
-  statsBuilder.add_bestStr(builder.CreateString(stats.bestStr));
-  statsBuilder.add_worstFitness(stats.worstFitness);
-  statsBuilder.add_worstSize(stats.worstSize);
-  statsBuilder.add_avgFitness(stats.avgFitness);
-  statsBuilder.add_avgSize(stats.avgSize);
-  statsBuilder.add_numRepeated(stats.numRepeated);
-  statsBuilder.add_numCrossoverBetter(stats.numCrossBetter);
-  statsBuilder.add_numCrossoverWorse(stats.numCrossWorse);
-  statsBuilder.add_numMutationBetter(stats.numMutBetter);
-  statsBuilder.add_numMutationWorse(stats.numMutWorse);
-  return statsBuilder.Finish();
-}
-#endif
 
 Statistics::Statistics(const std::string &statsName,
                        const std::vector<repr::Node> &population,
@@ -175,6 +279,29 @@ void Statistics::printStats_(const std::string &statsName) {
               << paddedStrCat(w, "| numMutBetter: ", numMutBetter)
               << paddedStrCat(w, "| numMutWorse: ", numMutWorse);
   }
+}
+
+void saveResults(const repr::Params &params,
+                 const std::vector<std::vector<Statistics>> &allTrainStats,
+                 const std::vector<std::vector<Statistics>> &allTestStats) {
+  flatbuffers::FlatBufferBuilder builder;
+
+  auto resultsParams = buildParams_(builder, params);
+  auto resultsTrainStats = buildAllStats_(builder, allTrainStats);
+  auto resultsTestStats = params.alwaysTest
+                              ? buildAllStats_(builder, allTestStats)
+                              : buildAllStats_(builder, {{}});
+  auto resultsFinalStats =
+      buildAggregatedStats_(builder, allTestStats, allTestStats[0].size() - 1);
+
+  results::ResultsBuilder resultsBuilder(builder);
+  resultsBuilder.add_params(resultsParams);
+  resultsBuilder.add_trainStats(resultsTrainStats);
+  resultsBuilder.add_testStats(resultsTestStats);
+  resultsBuilder.add_finalStats(resultsFinalStats);
+  builder.Finish(resultsBuilder.Finish());
+
+  saveToFile_(params.outputFile, builder.GetBufferPointer(), builder.GetSize());
 }
 
 } // namespace stats

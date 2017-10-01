@@ -188,6 +188,7 @@ cc_library(
         ":representation",
         ":threading",
         ":utils",
+        "//compnat/tp1/results",
         "//third_party:glog",
     ],
 )

@@ -38,7 +38,7 @@ public:
    * By default, the number of threads is the hardware concurrency.
    */
   ThreadPool(size_t numThreads = std::thread::hardware_concurrency())
-      : finishedCount_(0), counter_(0), end_(0), shouldJoin_(false) {
+      : finishedCount_(numThreads), counter_(0), end_(0), shouldJoin_(false) {
     for (size_t i = 0; i < numThreads; ++i) {
       threads_.emplace_back([this]() { worker_(); });
     }
@@ -76,17 +76,12 @@ public:
 private:
   /// Function ran by a single worker.
   void worker_() {
-    while (true) {
-      if (shouldJoin_) {
-        return;
-      }
-
+    while (!shouldJoin_) {
       const size_t index = counter_++;
       if (index < end_) {
         taskFn_(index);
       } else {
-        const size_t numFinishedThreads = ++finishedCount_;
-        if (numFinishedThreads == threads_.size()) {
+        if (++finishedCount_ == threads_.size()) {
           finishedCondition_.notify_one();
         }
 

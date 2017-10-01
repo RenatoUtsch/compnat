@@ -87,11 +87,13 @@ void simulate(const repr::Params &params, const repr::Dataset &trainDataset,
     LOG(INFO) << "";
     LOG(INFO) << "";
 
-    auto[testStats, trainStats] =
+    auto[trainStats, testStats] =
         simulateGeneration_(pool, rng, params, trainDataset, testDataset);
     allTrainStats.push_back(std::move(trainStats));
     allTestStats.push_back(std::move(testStats));
   }
+
+  saveResults(params, allTrainStats, allTestStats);
 }
 
 } // namespace simulation
