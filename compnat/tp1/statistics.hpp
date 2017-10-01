@@ -21,7 +21,6 @@
 #include <vector>
 
 #include "representation.hpp"
-#include "threading.hpp"
 
 namespace stats {
 
@@ -44,8 +43,7 @@ double fitness(const repr::Node &individual, const repr::Dataset &dataset);
  * @param dataset The dataset used to calculate the fitness.
  * @return Vector of fitness.
  */
-std::vector<double> fitness(threading::ThreadPool &pool,
-                            const std::vector<repr::Node> &population,
+std::vector<double> fitness(const std::vector<repr::Node> &population,
                             const repr::Dataset &dataset);
 
 /**

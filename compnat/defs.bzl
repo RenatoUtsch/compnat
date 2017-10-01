@@ -19,4 +19,5 @@ COMPNAT_CPP_COPTS = [
     "-Werror",
     "-pedantic",
     "-std=c++1z",
+    "-fopenmp",
 ]

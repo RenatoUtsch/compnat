@@ -20,6 +20,7 @@ cc_binary(
     name = "tp1",
     srcs = ["tp1.cpp"],
     copts = COMPNAT_CPP_COPTS,
+    linkopts = ["-fopenmp"],
     deps = [
         ":parser",
         ":primitives",
@@ -75,7 +76,6 @@ cc_test(
         ":parser",
         ":primitives",
         ":statistics",
-        ":threading",
         "//third_party:gtest",
     ],
 )
@@ -159,7 +159,6 @@ cc_library(
         ":operators",
         ":representation",
         ":statistics",
-        ":threading",
         "//third_party:glog",
     ],
 )
@@ -186,7 +185,6 @@ cc_library(
     copts = COMPNAT_CPP_COPTS,
     deps = [
         ":representation",
-        ":threading",
         ":utils",
         "//compnat/tp1/results",
         "//third_party:glog",
@@ -205,16 +203,9 @@ cc_test(
         ":primitives",
         ":representation",
         ":statistics",
-        ":threading",
         "//third_party:gmock",
         "//third_party:gtest",
     ],
-)
-
-cc_library(
-    name = "threading",
-    hdrs = ["threading.hpp"],
-    copts = COMPNAT_CPP_COPTS,
 )
 
 cc_library(

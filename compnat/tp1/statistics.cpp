@@ -162,13 +162,13 @@ double fitness(const repr::Node &individual, const repr::Dataset &dataset) {
   return std::sqrt(error / dataset.size());
 }
 
-std::vector<double> fitness(threading::ThreadPool &pool,
-                            const std::vector<repr::Node> &population,
+std::vector<double> fitness(const std::vector<repr::Node> &population,
                             const repr::Dataset &dataset) {
   std::vector<double> results(population.size());
-  pool.run(0, population.size(), [&results, &population, &dataset](size_t i) {
+#pragma omp parallel for
+  for (size_t i = 0; i < population.size(); ++i) {
     results[i] = fitness(population[i], dataset);
-  });
+  }
 
   return results;
 }
