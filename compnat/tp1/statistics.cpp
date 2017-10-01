@@ -69,7 +69,7 @@ bestIndividual_(flatbuffers::FlatBufferBuilder &builder,
                 size_t generation) {
   size_t best = 0;
   for (size_t i = 0; i < allStats.size(); ++i) {
-    if (allStats[i][generation].bestFitness >
+    if (allStats[i][generation].bestFitness <
         allStats[best][generation].bestFitness) {
       best = i;
     }

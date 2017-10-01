@@ -5,13 +5,20 @@ course at UFMG
 
 # Compiling
 
-To compile, install both [bazel](https://bazel.build/) and
-[glog](https://github.com/google/glog) on your system. Then, run from the root
-directory:
+To compile, install [bazel](https://bazel.build/) and OpenMP on your system.
+Then, run from the root directory:
 
 ```bash
-$ bazel run compnat/tp1
+$ bazel run -c opt compnat/tp1 -- <command line flags...>
 ```
 
 The code used by this project needs a C++17 compliant compiler (preferably
 clang 5.0.0+ or gcc 7.2.0+).
+
+# Python 3 scripts
+To run the python scripts, install the requirements.txt file in the script's
+folder:
+
+```bash
+$ pip3 install -r requirements.txt
+```
