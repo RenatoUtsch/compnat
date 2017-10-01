@@ -16,12 +16,60 @@
 
 #include "simulation.hpp"
 
+#include <utility>
+#include <vector>
+
 #include <glog/logging.h>
 
 #include "generators.hpp"
 #include "operators.hpp"
 #include "statistics.hpp"
 #include "threading.hpp"
+
+namespace {
+std::pair<std::vector<stats::Statistics>, std::vector<stats::Statistics>>
+simulateGeneration_(threading::ThreadPool &pool, repr::RNG &rng,
+                    const repr::Params &params,
+                    const repr::Dataset &trainDataset,
+                    const repr::Dataset &testDataset) {
+  std::vector<stats::Statistics> trainStats;
+  std::vector<stats::Statistics> testStats;
+
+  LOG(INFO) << "Generation 0";
+  auto population = generators::rampedHalfAndHalf(rng, params);
+
+  auto fitnesses = stats::fitness(pool, population, trainDataset);
+  auto sizes = stats::sizes(population);
+
+  trainStats.emplace_back("Train", population, fitnesses, sizes);
+  if (params.alwaysTest) {
+    testStats.emplace_back("Test", population,
+                           stats::fitness(pool, population, testDataset),
+                           sizes);
+  }
+
+  stats::ImprovementMetadata metadata;
+  for (size_t i = 1; i <= params.numGenerations; ++i) {
+    LOG(INFO) << "Generation " << i;
+    std::tie(population, metadata) = operators::newGeneration(
+        rng, params, population, fitnesses, sizes, trainStats[i - 1]);
+
+    fitnesses = stats::fitness(pool, population, trainDataset);
+    sizes = stats::sizes(population);
+
+    trainStats.emplace_back("Train", population, fitnesses, sizes, metadata);
+    if (params.alwaysTest || i == params.numGenerations) {
+      // Always save test stats for the last generation.
+      testStats.emplace_back("Test", population,
+                             stats::fitness(pool, population, testDataset),
+                             sizes);
+    }
+  }
+
+  return {trainStats, testStats};
+}
+
+} // namespace
 
 namespace simulation {
 
@@ -30,25 +78,19 @@ void simulate(const repr::Params &params, const repr::Dataset &trainDataset,
   repr::RNG rng(params.seed);
   threading::ThreadPool pool;
 
+  std::vector<std::vector<stats::Statistics>> allTrainStats;
+  std::vector<std::vector<stats::Statistics>> allTestStats;
   for (size_t i = 1; i <= params.numInstances; ++i) {
     LOG(INFO) << "";
     LOG(INFO) << "";
     LOG(INFO) << "INSTANCE " << i;
     LOG(INFO) << "";
     LOG(INFO) << "";
-    LOG(INFO) << "Generation 0";
-    auto population = generators::rampedHalfAndHalf(rng, params);
-    auto stats = stats::Statistics(pool, population, trainDataset);
-    stats::ImprovementMetadata metadata;
-    for (size_t j = 1; j <= params.numGenerations; ++j) {
-      LOG(INFO) << "Generation " << j;
-      std::tie(population, metadata) =
-          operators::newGeneration(rng, params, population, stats);
-      stats = stats::Statistics(pool, population, trainDataset, metadata);
-    }
 
-    LOG(INFO) << "Test statistics";
-    auto testStats = stats::Statistics(pool, population, testDataset);
+    auto[testStats, trainStats] =
+        simulateGeneration_(pool, rng, params, trainDataset, testDataset);
+    allTrainStats.push_back(std::move(trainStats));
+    allTestStats.push_back(std::move(testStats));
   }
 }
 

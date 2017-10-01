@@ -78,6 +78,9 @@ struct Primitive {
  * TODO(renatoutsch): add accessors to always be sure populationSize is correct.
  */
 struct Params {
+  /// Output filename.
+  std::string outputFile;
+
   /// RNG seed.
   unsigned seed;
 
@@ -102,22 +105,25 @@ struct Params {
   /// If using elitism.
   bool elitism;
 
+  /// If always running test dataset.
+  bool alwaysTest;
+
   /// Available function primitives.
   std::vector<PrimitiveFn> functions;
 
   /// Available terminal primitives.
   std::vector<PrimitiveFn> terminals;
 
-  Params(unsigned seed_, size_t numInstances_, size_t numGenerations_,
-         size_t populationSize_, size_t tournamentSize_, size_t maxHeight_,
-         double crossoverProb_, bool elitism_,
-         const std::vector<PrimitiveFn> &functions_,
+  Params(const std::string &outputFile_, unsigned seed_, size_t numInstances_,
+         size_t numGenerations_, size_t populationSize_, size_t tournamentSize_,
+         size_t maxHeight_, double crossoverProb_, bool elitism_,
+         bool alwaysTest_, const std::vector<PrimitiveFn> &functions_,
          const std::vector<PrimitiveFn> &terminals_)
-      : seed(seed_), numInstances(numInstances_),
+      : outputFile(outputFile_), seed(seed_), numInstances(numInstances_),
         numGenerations(numGenerations_), populationSize(populationSize_),
         tournamentSize(tournamentSize_), maxHeight(maxHeight_),
-        crossoverProb(crossoverProb_), elitism(elitism_), functions(functions_),
-        terminals(terminals_) {
+        crossoverProb(crossoverProb_), elitism(elitism_),
+        alwaysTest(alwaysTest_), functions(functions_), terminals(terminals_) {
     if (populationSize < maxHeight - 1) {
       LOG(WARNING) << "params: populationSize changed to maxHeight - 1";
       populationSize = maxHeight - 1;

@@ -57,94 +57,123 @@ std::vector<size_t> sizes(const std::vector<repr::Node> &population) {
   return sizes;
 }
 
-Statistics::Statistics(threading::ThreadPool &pool,
+#if 0
+flatbuffers::Offset<stats::GenerationStats>
+buildGenerationStats(flatbuffers::FlatBufferBuilder &builder,
+                     const Statistics &stats) {
+  stats::GenerationStatsBuilder statsBuilder(builder);
+  statsBuilder.add_bestFitness(stats.bestFitness);
+  statsBuilder.add_bestSize(stats.bestSize);
+  statsBuilder.add_bestStr(builder.CreateString(stats.bestStr));
+  statsBuilder.add_worstFitness(stats.worstFitness);
+  statsBuilder.add_worstSize(stats.worstSize);
+  statsBuilder.add_avgFitness(stats.avgFitness);
+  statsBuilder.add_avgSize(stats.avgSize);
+  statsBuilder.add_numRepeated(stats.numRepeated);
+  statsBuilder.add_numCrossoverBetter(stats.numCrossBetter);
+  statsBuilder.add_numCrossoverWorse(stats.numCrossWorse);
+  statsBuilder.add_numMutationBetter(stats.numMutBetter);
+  statsBuilder.add_numMutationWorse(stats.numMutWorse);
+  return statsBuilder.Finish();
+}
+#endif
+
+Statistics::Statistics(const std::string &statsName,
                        const std::vector<repr::Node> &population,
-                       const repr::Dataset &dataset,
+                       const std::vector<double> &fitnesses,
+                       const std::vector<size_t> &sizes,
                        const ImprovementMetadata &metadata)
-    : fitness(::stats::fitness(pool, population, dataset)),
-      sizes(::stats::sizes(population)), best(0), worst(0), averageFitness(0),
-      averageSize(0), numRepeatedIndividuals(0), numCrossoverBetter(0),
-      numCrossoverWorse(0), numMutationBetter(0), numMutationWorse(0) {
+    : best(0), bestFitness(0), bestSize(0), worst(0), worstFitness(0),
+      worstSize(0), avgFitness(0), avgSize(0), numRepeated(0),
+      numCrossBetter(-1), numCrossWorse(-1), numMutBetter(-1), numMutWorse(-1) {
 
-  calcFitnessStats_();
-  calcRepeatedIndividuals_();
-  calcAverageSize_();
-  calcImprovementStats_(metadata);
+  calcFitnessAndSizeStats_(population, fitnesses, sizes);
+  calcRepeatedIndividuals_(fitnesses);
+  calcImprovementStats_(fitnesses, metadata);
 
-  bestStr = population[best].str();
-
-  printStats_(metadata);
+  printStats_(statsName);
 }
 
-void Statistics::calcFitnessStats_() {
-  for (size_t i = 0; i < fitness.size(); ++i) {
-    if (fitness[best] > fitness[i]) {
+void Statistics::calcFitnessAndSizeStats_(
+    const std::vector<repr::Node> &population,
+    const std::vector<double> &fitnesses, const std::vector<size_t> &sizes) {
+  for (size_t i = 0; i < fitnesses.size(); ++i) {
+    if (fitnesses[best] > fitnesses[i]) {
       best = i;
     }
-    if (fitness[worst] < fitness[i]) {
+    if (fitnesses[worst] < fitnesses[i]) {
       worst = i;
     }
-    averageFitness += fitness[i];
+    avgFitness += fitnesses[i];
+    avgSize += sizes[i];
   }
-  averageFitness /= fitness.size();
+  avgFitness /= fitnesses.size();
+  avgSize /= sizes.size();
+
+  bestFitness = fitnesses[best];
+  bestSize = sizes[best];
+  bestStr = population[best].str();
+  worstFitness = fitnesses[worst];
+  worstSize = sizes[worst];
 }
 
-void Statistics::calcRepeatedIndividuals_() {
+void Statistics::calcRepeatedIndividuals_(
+    const std::vector<double> &fitnesses) {
   std::unordered_set<double> set;
-  for (const auto &fit : fitness) {
+  for (const auto &fit : fitnesses) {
     if (set.count(fit)) {
-      ++numRepeatedIndividuals;
+      ++numRepeated;
     } else {
       set.insert(fit);
     }
   }
 }
 
-void Statistics::calcAverageSize_() {
-  for (auto size : sizes) {
-    averageSize += size;
-  }
-  averageSize /= sizes.size();
-}
-
-void Statistics::calcImprovementStats_(const ImprovementMetadata &metadata) {
-  calcFitnessImprovement_(metadata.crossoverAvgParentFitness,
-                          numCrossoverBetter, numCrossoverWorse);
-  calcFitnessImprovement_(metadata.mutationParentFitness, numMutationBetter,
-                          numMutationWorse);
+void Statistics::calcImprovementStats_(const std::vector<double> &fitnesses,
+                                       const ImprovementMetadata &metadata) {
+  calcFitnessImprovement_(metadata.crossoverAvgParentFitness, fitnesses,
+                          numCrossBetter, numCrossWorse);
+  calcFitnessImprovement_(metadata.mutationParentFitness, fitnesses,
+                          numMutBetter, numMutWorse);
 }
 
 void Statistics::calcFitnessImprovement_(
-    const std::vector<std::pair<size_t, double>> &fitnesses, size_t &better,
-    size_t &worse) {
-  for (const auto &p : fitnesses) {
+    const std::vector<std::pair<size_t, double>> &parentFitnesses,
+    const std::vector<double> &fitnesses, int &better, int &worse) {
+  if (!parentFitnesses.empty()) {
+    better = 0;
+    worse = 0;
+  }
+
+  for (const auto &p : parentFitnesses) {
     const auto & [ childIndex, parentFitness ] = p;
-    if (fitness[childIndex] < parentFitness) {
+    if (fitnesses[childIndex] < parentFitness) {
       ++better;
-    } else if (fitness[childIndex] > parentFitness) {
+    } else if (fitnesses[childIndex] > parentFitness) {
       ++worse;
     }
   }
 }
 
-void Statistics::printStats_(const ImprovementMetadata &metadata) {
+void Statistics::printStats_(const std::string &statsName) {
   using utils::paddedStrCat;
+  using utils::strCat;
   const size_t w = 30; // Width of each padded string.
 
-  LOG(INFO) << paddedStrCat(w, "  best fitness: ", fitness[best])
-            << paddedStrCat(w, "| best size: ", sizes[best])
-            << paddedStrCat(w, "| worst fitness: ", fitness[worst])
-            << paddedStrCat(w, "| worst size: ", sizes[worst]);
-  LOG(INFO) << paddedStrCat(w, "  avgFitness: ", averageFitness)
-            << paddedStrCat(w, "| avgSize: ", averageSize)
-            << paddedStrCat(w, "| numRepeated: ", numRepeatedIndividuals);
+  LOG(INFO) << strCat("  ", statsName, ":");
+  LOG(INFO) << paddedStrCat(w, "    best fitness: ", bestFitness)
+            << paddedStrCat(w, "| best size: ", bestSize)
+            << paddedStrCat(w, "| worst fitness: ", worstFitness)
+            << paddedStrCat(w, "| worst size: ", worstSize);
+  LOG(INFO) << paddedStrCat(w, "    avgFitness: ", avgFitness)
+            << paddedStrCat(w, "| avgSize: ", avgSize)
+            << paddedStrCat(w, "| numRepeated: ", numRepeated);
 
-  if (!metadata.crossoverAvgParentFitness.empty() &&
-      !metadata.mutationParentFitness.empty()) {
-    LOG(INFO) << paddedStrCat(w, "  numCrossBetter: ", numCrossoverBetter)
-              << paddedStrCat(w, "| numCrossWorse: ", numCrossoverWorse)
-              << paddedStrCat(w, "| numMutBetter: ", numMutationBetter)
-              << paddedStrCat(w, "| numMutWorse: ", numMutationWorse);
+  if (numCrossBetter != -1) {
+    LOG(INFO) << paddedStrCat(w, "    numCrossBetter: ", numCrossBetter)
+              << paddedStrCat(w, "| numCrossWorse: ", numCrossWorse)
+              << paddedStrCat(w, "| numMutBetter: ", numMutBetter)
+              << paddedStrCat(w, "| numMutWorse: ", numMutWorse);
   }
 }
 

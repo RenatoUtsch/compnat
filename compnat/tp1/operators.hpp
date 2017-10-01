@@ -31,11 +31,11 @@ namespace operators {
  * Candidates may repeat when doing the tournament, but that's not a problem.
  * @param rng Random number generator.
  * @param tournamentSize Size of the tournament.
- * @param fitness Fitness of the individuals of the population
+ * @param fitnesses Fitness of the individuals of the population
  * @return The index of the individual with the best fitness in the tournament.
  */
 size_t tournamentSelection(repr::RNG &rng, size_t tournamentSize,
-                           const std::vector<repr::T> &fitness);
+                           const std::vector<repr::T> &fitnesses);
 
 /**
  * Uses a traversal to select a random tree point.
@@ -84,14 +84,18 @@ repr::Node mutation(repr::RNG &rng, const repr::Params &params,
  * Generates a new population from an existing one.
  * @param rng Random number generator.
  * @param params Genetic programming params.
- * @param population Parent generation.
- * @param statistics Statistics of the parent generation.
+ * @param parentPopulation Parent generation.
+ * @param parentFitnesses Fitnesses of the parent population.
+ * @param parnentSizes Sizes of the parent population.
+ * @param parentStats Statistics of the parent generation.
  * @return Tuple containing the new population, the indices of crossover
  *   children and indices of mutation children.
  */
 std::pair<std::vector<repr::Node>, stats::ImprovementMetadata>
 newGeneration(repr::RNG &rng, const repr::Params &params,
               const std::vector<repr::Node> &parentPopulation,
+              const std::vector<double> &parentFitnesses,
+              const std::vector<size_t> &parentSizes,
               const stats::Statistics &parentStats);
 
 } // namespace operators

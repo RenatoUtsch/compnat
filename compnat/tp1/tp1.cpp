@@ -26,6 +26,9 @@
 
 DEFINE_string(dataset_train, "", "File containing the train dataset.");
 DEFINE_string(dataset_test, "", "File containing the test dataset.");
+DEFINE_string(output_file, "",
+              "Output file for the execution data. "
+              "Extension should be '.cnat'.");
 DEFINE_int32(seed, -1, "Initial seed (-1 to select at random).");
 DEFINE_int32(num_instances, 30, "Number of instances.");
 DEFINE_int32(num_generations, 50, "Number of generations to run.");
@@ -35,6 +38,7 @@ DEFINE_int32(max_height, 7, "Maximum tree height.");
 DEFINE_double(crossover_prob, 0.9,
               "Crossover probability. Will use mutation otherwise.");
 DEFINE_bool(elitism, false, "Whether to use elitism or not.");
+DEFINE_bool(always_test, false, "Run test dataset on all generations.");
 
 int main(int argc, char **argv) {
   gflags::ParseCommandLineFlags(&argc, &argv, true);
@@ -64,9 +68,10 @@ int main(int argc, char **argv) {
     terminals.push_back(primitives::makeVarTerm(i));
   }
 
-  repr::Params params(FLAGS_seed, FLAGS_num_instances, FLAGS_num_generations,
-                      FLAGS_population_size, FLAGS_tournament_size,
-                      FLAGS_max_height, FLAGS_crossover_prob, FLAGS_elitism,
+  repr::Params params(FLAGS_output_file, FLAGS_seed, FLAGS_num_instances,
+                      FLAGS_num_generations, FLAGS_population_size,
+                      FLAGS_tournament_size, FLAGS_max_height,
+                      FLAGS_crossover_prob, FLAGS_elitism, FLAGS_always_test,
                       functions, terminals);
 
   simulation::simulate(params, trainDataset, testDataset);
