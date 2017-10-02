@@ -16,6 +16,11 @@ View `bazel run -c opt compnat/tp1 -- --help` for more information about the
 flags. You're required to set at least `--dataset_train` , `--dataset_test` and
 `--output_file`.
 
+To run tests:
+```
+$ bazel test //compnat/tp1/...
+```
+
 The code used by this project needs a C++17 compliant compiler (preferably
 clang 5.0.0+ or gcc 7.2.0+).
 
