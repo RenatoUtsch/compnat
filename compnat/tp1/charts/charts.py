@@ -30,10 +30,14 @@ def plot_chart(stats, size):
     worst_y = [stats(i).WorstFitness().Mean() for i in range(1, size)]
     worst_e = [stats(i).WorstFitness().Stddev() for i in range(1, size)]
 
-    #plt.yscale('log')
+    plt.yscale('log')
     plt.errorbar(range(1, size), best_y, best_e)
-    #plt.plot(range(1, size), avg_y)
-    #plt.plot(range(1, size), worst_y)
+    plt.plot(range(1, size), avg_y)
+    plt.plot(range(1, size), worst_y)
+    plt.xlabel('Generation')
+    plt.ylabel('Fitness (log scale)')
+    plt.title(
+        'Best (and sddev), average and worst individuals for the test dataset')
     plt.show()
 
 

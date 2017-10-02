@@ -43,11 +43,10 @@ buildParams_(flatbuffers::FlatBufferBuilder &builder,
   paramsBuilder.add_alwaysTest(params.alwaysTest);
   return paramsBuilder.Finish();
 }
-
-results::meanStddev
-aggregateParam_(const std::vector<std::vector<Statistics>> &allStats,
-                size_t generation,
-                std::function<double(const Statistics &)> &&accessor) {
+std::pair<double, double>
+aggregateParamPair_(const std::vector<std::vector<Statistics>> &allStats,
+                    size_t generation,
+                    std::function<double(const Statistics &)> &&accessor) {
   double mean = 0;
   for (size_t i = 0; i < allStats.size(); ++i) {
     mean += accessor(allStats[i][generation]);
@@ -60,6 +59,15 @@ aggregateParam_(const std::vector<std::vector<Statistics>> &allStats,
   }
   stddev = std::sqrt(stddev / allStats.size());
 
+  return {mean, stddev};
+}
+
+results::meanStddev
+aggregateParam_(const std::vector<std::vector<Statistics>> &allStats,
+                size_t generation,
+                std::function<double(const Statistics &)> &&accessor) {
+  auto[mean, stddev] = aggregateParamPair_(
+      allStats, generation, std::forward<decltype(accessor)>(accessor));
   return results::meanStddev(mean, stddev);
 }
 
@@ -302,6 +310,18 @@ void saveResults(const repr::Params &params,
   builder.Finish(resultsBuilder.Finish());
 
   saveToFile_(params.outputFile, builder.GetBufferPointer(), builder.GetSize());
+
+  auto[finalMeanFitness, finalFitnessError] =
+      aggregateParamPair_(allTestStats, allTestStats[0].size() - 1,
+                          [](const auto &s) { return s.bestFitness; });
+  auto[finalMeanSize, finalSizeError] =
+      aggregateParamPair_(allTestStats, allTestStats[0].size() - 1,
+                          [](const auto &s) { return s.bestSize; });
+  LOG(INFO) << "";
+  LOG(INFO) << "Final results: ";
+  LOG(INFO) << "  best fitness: " << finalMeanFitness << " +/- "
+            << finalFitnessError;
+  LOG(INFO) << "  best size: " << finalMeanSize << " +/- " << finalSizeError;
 }
 
 } // namespace stats
