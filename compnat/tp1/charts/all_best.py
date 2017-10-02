@@ -31,7 +31,8 @@ def result_str(result):
                 params.CrossoverProb(), True if params.Elitism() else False))
 
 
-def plot_charts(all_results, train, numRepeated, numCrossBetter, numMutBetter):
+def plot_charts(all_results, train, sizes, numRepeated, numCrossBetter,
+                numMutBetter):
     for result in all_results:
         if train:
             stats = result.TrainStats
@@ -45,6 +46,8 @@ def plot_charts(all_results, train, numRepeated, numCrossBetter, numMutBetter):
                 stats(i).NumRepeated().Mean() /
                 result.Params().PopulationSize() for i in range(size)
             ]
+        elif sizes:
+            y = [stats(i).BestSize().Mean() for i in range(size)]
         elif numCrossBetter:
             y = [
                 stats(i).NumCrossBetter().Mean() /
@@ -67,6 +70,8 @@ def plot_charts(all_results, train, numRepeated, numCrossBetter, numMutBetter):
     plt.xlabel('Generation')
     if numRepeated:
         plt.ylabel('Normalized number of repeated individuals')
+    elif sizes:
+        plt.ylabel('Number of elements of the best individual')
     elif numCrossBetter:
         plt.ylabel(
             'Normalized number of crossover individuals better than parents')
@@ -75,7 +80,7 @@ def plot_charts(all_results, train, numRepeated, numCrossBetter, numMutBetter):
             'Normalized number of mutation individuals better than parents')
     else:
         plt.ylabel('Fitness')
-    plt.title('Houses number of mutation individuals better than parents')
+    #plt.title('Houses number of elements of the best individual')
     plt.show()
 
 
@@ -109,6 +114,7 @@ def main():
         all_results,
         train=True,
         numRepeated=False,
+        sizes=False,
         numCrossBetter=False,
         numMutBetter=False)
 
