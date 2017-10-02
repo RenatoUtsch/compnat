@@ -209,6 +209,7 @@ cc_test(
         ":parser",
         ":primitives",
         ":representation",
+        ":simulation",
         ":statistics",
         "//third_party:gmock",
         "//third_party:gtest",
