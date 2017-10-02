@@ -17,15 +17,21 @@
 #ifndef COMPNAT_TP1_SIMULATION_HPP
 #define COMPNAT_TP1_SIMULATION_HPP
 
+#include <utility>
+#include <vector>
+
 #include "representation.hpp"
+#include "statistics.hpp"
 
 namespace simulation {
 
 /**
  * Runs the entire GA simulation for the given params and datasets.
  */
-void simulate(const repr::Params &params, const repr::Dataset &trainDataset,
-              const repr::Dataset &testDataset);
+std::pair<std::vector<std::vector<stats::Statistics>>,
+          std::vector<std::vector<stats::Statistics>>>
+simulate(const repr::Params &params, const repr::Dataset &trainDataset,
+         const repr::Dataset &testDataset);
 
 } // namespace simulation
 

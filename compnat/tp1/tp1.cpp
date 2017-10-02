@@ -74,7 +74,9 @@ int main(int argc, char **argv) {
                       FLAGS_crossover_prob, FLAGS_elitism, FLAGS_always_test,
                       functions, terminals);
 
-  simulation::simulate(params, trainDataset, testDataset);
+  auto[allTrainStats, allTestStats] =
+      simulation::simulate(params, trainDataset, testDataset);
+  saveResults(params, allTrainStats, allTestStats);
 
   return 0;
 }

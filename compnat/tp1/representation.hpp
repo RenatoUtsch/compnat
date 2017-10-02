@@ -144,13 +144,16 @@ struct Params {
     }
 
     LOG(INFO) << "Params:";
+    LOG(INFO) << "outputFile: " << outputFile;
     LOG(INFO) << "seed: " << seed;
+    LOG(INFO) << "numInstances: " << numInstances;
     LOG(INFO) << "numGenerations: " << numGenerations;
     LOG(INFO) << "populationSize: " << populationSize;
     LOG(INFO) << "tournamentSize: " << tournamentSize;
     LOG(INFO) << "maxHeight: " << maxHeight;
     LOG(INFO) << "crossoverProb: " << crossoverProb;
     LOG(INFO) << "elitism: " << elitism;
+    LOG(INFO) << "alwaysTest: " << alwaysTest;
   }
 };
 

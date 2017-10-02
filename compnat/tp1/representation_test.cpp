@@ -29,8 +29,9 @@ using repr::Primitive;
 using repr::RNG;
 
 TEST(ParamsTest, WorksCorrectly) {
-  Params params(42, 3, 50, 8, 6, 5, 0.5, false, {primitives::sumFn},
+  Params params("he", 42, 3, 50, 8, 6, 5, 0.5, false, true, {primitives::sumFn},
                 {primitives::makeVarTerm(0), primitives::makeVarTerm(1)});
+  EXPECT_EQ("he", params.outputFile);
   EXPECT_EQ((unsigned)42, params.seed);
   EXPECT_EQ((unsigned)3, params.numInstances);
   EXPECT_EQ((size_t)50, params.numGenerations);
@@ -38,16 +39,17 @@ TEST(ParamsTest, WorksCorrectly) {
   EXPECT_EQ((size_t)6, params.tournamentSize);
   EXPECT_EQ((size_t)5, params.maxHeight);
   EXPECT_FLOAT_EQ(0.5, params.crossoverProb);
-  EXPECT_EQ(false, params.elitism);
+  EXPECT_FALSE(params.elitism);
+  EXPECT_TRUE(params.alwaysTest);
   EXPECT_EQ((size_t)1, params.functions.size());
   EXPECT_EQ((size_t)2, params.terminals.size());
 }
 
 TEST(ParamsTest, UpdatesPopulationSizeCorrectly) {
-  Params params1(0, 0, 0, 0, 0, 5, 0.8, false, {}, {});
+  Params params1("", 0, 0, 0, 0, 0, 5, 0.8, false, false, {}, {});
   EXPECT_EQ((size_t)4, params1.populationSize);
 
-  Params params2(0, 0, 0, 15, 0, 8, 0.8, false, {}, {});
+  Params params2("", 0, 0, 0, 15, 0, 8, 0.8, false, false, {}, {});
   EXPECT_EQ((size_t)28, params2.populationSize);
 }
 

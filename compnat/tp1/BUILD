@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//compnat:defs.bzl", "COMPNAT_CPP_COPTS")
+load("//compnat:defs.bzl", "COMPNAT_CPP_COPTS", "COMPNAT_CPP_LINKOPTS")
 
 package(default_visibility = ["//visibility:private"])
 
@@ -20,7 +20,7 @@ cc_binary(
     name = "tp1",
     srcs = ["tp1.cpp"],
     copts = COMPNAT_CPP_COPTS,
-    linkopts = ["-fopenmp"],
+    linkopts = COMPNAT_CPP_LINKOPTS,
     deps = [
         ":parser",
         ":primitives",
@@ -44,6 +44,7 @@ cc_test(
     size = "small",
     srcs = ["generators_test.cpp"],
     copts = COMPNAT_CPP_COPTS,
+    linkopts = COMPNAT_CPP_LINKOPTS,
     deps = [
         ":generators",
         ":primitives",
@@ -70,6 +71,7 @@ cc_test(
     srcs = ["operators_test.cpp"],
     copts = COMPNAT_CPP_COPTS,
     data = ["//compnat/tp1/datasets"],
+    linkopts = COMPNAT_CPP_LINKOPTS,
     deps = [
         ":generators",
         ":operators",
@@ -97,6 +99,7 @@ cc_test(
     srcs = ["parser_test.cpp"],
     copts = COMPNAT_CPP_COPTS,
     data = ["//compnat/tp1/datasets"],
+    linkopts = COMPNAT_CPP_LINKOPTS,
     deps = [
         ":parser",
         "//third_party:gmock",
@@ -120,6 +123,7 @@ cc_test(
     size = "small",
     srcs = ["primitives_test.cpp"],
     copts = COMPNAT_CPP_COPTS,
+    linkopts = COMPNAT_CPP_LINKOPTS,
     deps = [
         ":primitives",
         ":representation",
@@ -142,6 +146,7 @@ cc_test(
     size = "small",
     srcs = ["representation_test.cpp"],
     copts = COMPNAT_CPP_COPTS,
+    linkopts = COMPNAT_CPP_LINKOPTS,
     deps = [
         ":primitives",
         ":representation",
@@ -169,6 +174,7 @@ cc_test(
     srcs = ["simulation_test.cpp"],
     copts = COMPNAT_CPP_COPTS,
     data = ["//compnat/tp1/datasets"],
+    linkopts = COMPNAT_CPP_LINKOPTS,
     deps = [
         ":parser",
         ":primitives",
@@ -197,6 +203,7 @@ cc_test(
     srcs = ["statistics_test.cpp"],
     copts = COMPNAT_CPP_COPTS,
     data = ["//compnat/tp1/datasets"],
+    linkopts = COMPNAT_CPP_LINKOPTS,
     deps = [
         ":generators",
         ":parser",
@@ -219,6 +226,7 @@ cc_test(
     size = "small",
     srcs = ["utils_test.cpp"],
     copts = COMPNAT_CPP_COPTS,
+    linkopts = COMPNAT_CPP_LINKOPTS,
     deps = [
         ":utils",
         "//third_party:gtest",

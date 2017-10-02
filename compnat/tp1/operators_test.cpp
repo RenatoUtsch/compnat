@@ -24,7 +24,6 @@
 #include "parser.hpp"
 #include "primitives.hpp"
 #include "statistics.hpp"
-#include "threading.hpp"
 
 namespace {
 using operators::crossover;
@@ -42,7 +41,7 @@ TEST(CrossoverTest, WorksCorrectly) {
   repr::RNG rng;
 
   // For params.maxHeight.
-  repr::Params params(0, 0, 0, 5, 0, 3, 0.8, false, {}, {});
+  repr::Params params("", 0, 0, 0, 5, 0, 3, 0.8, false, false, {}, {});
 
   repr::Node node0(primitives::sumFn(rng));
   node0.setChild(0, primitives::makeVarTerm(0)(rng));
@@ -69,7 +68,7 @@ TEST(MutationTest, WorksCorrectly) {
 
   // For params.maxHeight, functions and terminals.
   repr::Params params( // Keep formatting
-      0, 0, 0, 4, 0, 3, 0.8, false,
+      "", 0, 0, 0, 4, 0, 3, 0.8, false, false,
       {primitives::sumFn, primitives::subFn, primitives::multFn,
        primitives::divFn, primitives::logFn},
       {primitives::makeVarTerm(0), primitives::makeVarTerm(1)});
@@ -93,7 +92,7 @@ TEST(MutationTest, OneElementTree) {
 
   // For params.maxHeight, functions and terminals.
   repr::Params params( // Keep formatting
-      0, 0, 0, 4, 0, 3, 0.8, false,
+      "", 0, 0, 0, 4, 0, 3, 0.8, false, false,
       {primitives::sumFn, primitives::subFn, primitives::multFn,
        primitives::divFn, primitives::logFn},
       {primitives::makeVarTerm(0), primitives::makeVarTerm(1)});
@@ -114,11 +113,10 @@ TEST(MutationTest, OneElementTree) {
 
 TEST(NewGenerationTest, WorksCorrectly) {
   repr::RNG rng;
-  threading::ThreadPool pool;
 
   // For params.maxHeight, functions and terminals.
   repr::Params params( // Keep formatting
-      0, 0, 10, 60, 5, 7, 0.9, true,
+      "", 0, 0, 10, 60, 5, 7, 0.9, true, false,
       {
           primitives::sumFn,
           primitives::subFn,
@@ -134,11 +132,17 @@ TEST(NewGenerationTest, WorksCorrectly) {
       parser::loadDataset("compnat/tp1/datasets/keijzer-7-train.csv");
 
   const auto population = generators::rampedHalfAndHalf(rng, params);
-  const auto stats = stats::Statistics(pool, population, dataset);
+  auto fitnesses = stats::fitness(population, dataset);
+  auto sizes = stats::sizes(population);
+  const auto stats = stats::Statistics("train", population, fitnesses, sizes);
+
   const auto[newPopulation, improvementMetadata] =
-      newGeneration(rng, params, population, stats);
-  const auto newStats =
-      stats::Statistics(pool, newPopulation, dataset, improvementMetadata);
+      newGeneration(rng, params, population, fitnesses, sizes, stats);
+
+  fitnesses = stats::fitness(population, dataset);
+  sizes = stats::sizes(population);
+  const auto newStats = stats::Statistics("test", newPopulation, fitnesses,
+                                          sizes, improvementMetadata);
 
   EXPECT_EQ(population.size(), newPopulation.size());
 

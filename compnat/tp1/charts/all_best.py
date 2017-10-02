@@ -31,7 +31,7 @@ def result_str(result):
                 params.CrossoverProb(), True if params.Elitism() else False))
 
 
-def plot_charts(all_results, train, numRepeated):
+def plot_charts(all_results, train, numRepeated, numCrossBetter, numMutBetter):
     for result in all_results:
         if train:
             stats = result.TrainStats
@@ -45,17 +45,37 @@ def plot_charts(all_results, train, numRepeated):
                 stats(i).NumRepeated().Mean() /
                 result.Params().PopulationSize() for i in range(size)
             ]
+        elif numCrossBetter:
+            y = [
+                stats(i).NumCrossBetter().Mean() /
+                result.Params().PopulationSize() for i in range(1, size)
+            ]
+        elif numMutBetter:
+            y = [
+                stats(i).NumMutBetter().Mean() /
+                result.Params().PopulationSize() for i in range(1, size)
+            ]
         else:
             y = [stats(i).BestFitness().Mean() for i in range(size)]
-        plt.plot(range(size), y, label=result_str(result))
+
+        if numCrossBetter or numMutBetter:
+            plt.plot(range(1, size), y, label=result_str(result))
+        else:
+            plt.plot(range(size), y, label=result_str(result))
 
     plt.legend(loc='upper right')
     plt.xlabel('Generation')
     if numRepeated:
         plt.ylabel('Normalized number of repeated individuals')
+    elif numCrossBetter:
+        plt.ylabel(
+            'Normalized number of crossover individuals better than parents')
+    elif numMutBetter:
+        plt.ylabel(
+            'Normalized number of mutation individuals better than parents')
     else:
         plt.ylabel('Fitness')
-    plt.title('Keijzer-10 number of repeated individuals')
+    plt.title('Houses number of mutation individuals better than parents')
     plt.show()
 
 
@@ -85,7 +105,12 @@ def main():
     print('  Size: {}'.format(best_result.FinalStats().BestIndividualSize()))
     print('  Str: {}'.format(best_result.FinalStats().BestIndividualStr()))
 
-    plot_charts(all_results, train=True, numRepeated=False)
+    plot_charts(
+        all_results,
+        train=True,
+        numRepeated=False,
+        numCrossBetter=False,
+        numMutBetter=False)
 
 
 if __name__ == '__main__':

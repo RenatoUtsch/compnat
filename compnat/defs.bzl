@@ -12,12 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Use this in all C++ cc_library and cc_binary rules that are part of compnat.
+# Use this in all C++ cc_* rules that are part of compnat.
 COMPNAT_CPP_COPTS = [
     "-Wall",
     "-Wextra",
     "-Werror",
     "-pedantic",
     "-std=c++1z",
+    "-fopenmp",
+]
+
+# Use this in all C++ cc_binary and cc_test rules that are part of compnat.
+COMPNAT_CPP_LINKOPTS = [
     "-fopenmp",
 ]

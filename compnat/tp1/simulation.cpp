@@ -69,8 +69,10 @@ simulateGeneration_(repr::RNG &rng, const repr::Params &params,
 
 namespace simulation {
 
-void simulate(const repr::Params &params, const repr::Dataset &trainDataset,
-              const repr::Dataset &testDataset) {
+std::pair<std::vector<std::vector<stats::Statistics>>,
+          std::vector<std::vector<stats::Statistics>>>
+simulate(const repr::Params &params, const repr::Dataset &trainDataset,
+         const repr::Dataset &testDataset) {
   repr::RNG rng(params.seed);
 
   std::vector<std::vector<stats::Statistics>> allTrainStats;
@@ -88,7 +90,7 @@ void simulate(const repr::Params &params, const repr::Dataset &trainDataset,
     allTestStats.push_back(std::move(testStats));
   }
 
-  saveResults(params, allTrainStats, allTestStats);
+  return {allTrainStats, allTestStats};
 }
 
 } // namespace simulation

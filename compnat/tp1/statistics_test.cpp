@@ -25,7 +25,6 @@
 #include "parser.hpp"
 #include "primitives.hpp"
 #include "representation.hpp"
-#include "threading.hpp"
 
 namespace {
 using stats::Statistics;
@@ -63,8 +62,7 @@ TEST(FitnessTest, WorksCorrectly) {
       {{15, 4}, 21},
   };
 
-  threading::ThreadPool pool;
-  const auto fitness = stats::fitness(pool, population, dataset);
+  const auto fitness = stats::fitness(population, dataset);
   ASSERT_EQ((size_t)3, fitness.size());
   EXPECT_FLOAT_EQ(1.5811388, fitness[0]);
   EXPECT_FLOAT_EQ(14.534055, fitness[1]);
@@ -95,7 +93,7 @@ TEST(StatisticsTest, SingleGenerationPerformanceBenchmark) {
 
   // Params for a big test.
   repr::Params params( // Improve formatting
-      1, 0, 1, 600, 7, 7, 0.9, false,
+      "", 1, 1, 1, 600, 7, 7, 0.9, false, false,
       {
           primitives::sumFn,
           primitives::subFn,
@@ -114,10 +112,12 @@ TEST(StatisticsTest, SingleGenerationPerformanceBenchmark) {
   const auto &population = generators::rampedHalfAndHalf(rng, params);
   EXPECT_EQ((size_t)600, population.size());
 
-  threading::ThreadPool pool;
-  const auto &stats = Statistics(pool, population, dataset);
-  EXPECT_EQ((size_t)600, stats.fitness.size());
-  EXPECT_EQ((size_t)600, stats.sizes.size());
+  const auto fitnesses = stats::fitness(population, dataset);
+  const auto sizes = stats::sizes(population);
+  [[maybe_unused]] const auto stats =
+      Statistics("train", population, fitnesses, sizes);
+  EXPECT_EQ((size_t)600, fitnesses.size());
+  EXPECT_EQ((size_t)600, sizes.size());
 }
 
 } // namespace
