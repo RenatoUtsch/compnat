@@ -17,9 +17,9 @@ workspace(name = "com_github_renatoutsch_compnat")
 # TODO(renatoutsch): use a tag or commit once there's a release
 http_archive(
     name = "com_github_renatoutsch_rules_flatbuffers",
-    #sha256 = "",  # TODO(renatoutsch): add once there's a release
-    strip_prefix = "rules_flatbuffers-master",
-    urls = ["https://github.com/RenatoUtsch/rules_flatbuffers/archive/master.zip"],
+    sha256 = "e850af6d26f35a2ca442e96209f7820bf781e085ab39cb207f54c7acef646c01",
+    strip_prefix = "rules_flatbuffers-651e35d0f812f1cac2cf9a724d45a9f9b2077bde",
+    urls = ["https://github.com/RenatoUtsch/rules_flatbuffers/archive/651e35d0f812f1cac2cf9a724d45a9f9b2077bde.zip"],
 )
 
 load(
@@ -32,9 +32,9 @@ flatbuffers_repositories()
 # TODO(renatoutsch): use a tag or commit once there's a release
 http_archive(
     name = "com_github_renatoutsch_rules_system",
-    #sha256 = "",  # TODO(renatoutsch): add once there's a release
-    strip_prefix = "rules_system-master",
-    urls = ["https://github.com/RenatoUtsch/rules_system/archive/master.zip"],
+    sha256 = "2eb59d2111122ac6d745a6c59008aadfd7192ba64699aab95a6474f1205e5e4e",
+    strip_prefix = "rules_system-9859e1ec2e62567421438100da0d55bfe2e98a29",
+    urls = ["https://github.com/RenatoUtsch/rules_system/archive/9859e1ec2e62567421438100da0d55bfe2e98a29.zip"],
 )
 
 http_archive(
