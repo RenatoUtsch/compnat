@@ -19,7 +19,7 @@
 #include <utility>
 #include <vector>
 
-#include <glog/logging.h>
+#include "glog/logging.h"
 
 #include "generators.hpp"
 #include "operators.hpp"

@@ -22,7 +22,7 @@
 #include <string>
 #include <vector>
 
-#include <glog/logging.h>
+#include "glog/logging.h"
 
 namespace repr {
 class Node;

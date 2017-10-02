@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+load("@com_github_renatoutsch_rules_system//system:defs.bzl", "system_select")
+
 # Use this in all C++ cc_* rules that are part of compnat.
 COMPNAT_CPP_COPTS = [
     "-Wall",
@@ -19,10 +21,13 @@ COMPNAT_CPP_COPTS = [
     "-Werror",
     "-pedantic",
     "-std=c++1z",
-    "-fopenmp",
-]
+] + system_select({
+    "linux": ["-fopenmp"],
+    "default": [],
+})
 
 # Use this in all C++ cc_binary and cc_test rules that are part of compnat.
-COMPNAT_CPP_LINKOPTS = [
-    "-fopenmp",
-]
+COMPNAT_CPP_LINKOPTS = system_select({
+    "linux": ["-fopenmp"],
+    "default": [],
+})

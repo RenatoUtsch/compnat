@@ -20,7 +20,7 @@
 #include <fstream>
 #include <unordered_set>
 
-#include <glog/logging.h>
+#include "glog/logging.h"
 
 #include "compnat/tp1/results/results_generated.h"
 #include "utils.hpp"

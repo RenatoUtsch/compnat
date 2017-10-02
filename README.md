@@ -5,7 +5,10 @@ course at UFMG
 
 # Compiling
 
-To compile, install [bazel](https://bazel.build/) and OpenMP on your system.
+To compile, install [bazel](https://bazel.build/). If on Linux, also install
+OpenMP on your system. It's recommended to run this project on Linux to have the
+performance improvement from multi-threading.
+
 Then, run from the root directory:
 
 ```bash
