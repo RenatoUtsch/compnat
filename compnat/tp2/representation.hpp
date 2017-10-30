@@ -45,8 +45,11 @@ public:
   /// Constructs the dataset from the given file.
   Dataset(const char *filename);
 
-  /// Returns the points of the dataset.
+  /// Returns the points vector.
   const std::vector<Point> &points() const { return points_; }
+
+  /// Returns the points of the dataset.
+  const Point &point(size_t i) const { return points_[i]; }
 
   /// Returns the number of points on the dataset.
   size_t numPoints() const { return numPoints_; }

@@ -12,4 +12,42 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-package(default_visibility = ["//visibility:public"])
+load("//compnat:defs.bzl", "COMPNAT_CPP_COPTS", "COMPNAT_CPP_LINKOPTS")
+
+package(default_visibility = ["//visibility:private"])
+
+cc_binary(
+    name = "tp2",
+    srcs = ["tp2.cpp"],
+    copts = COMPNAT_CPP_COPTS,
+    linkopts = COMPNAT_CPP_LINKOPTS,
+    deps = [
+        ":representation",
+        "//third_party:gflags",
+        "//third_party:glog",
+    ],
+)
+
+cc_library(
+    name = "aco",
+    srcs = ["aco.cpp"],
+    hdrs = ["aco.hpp"],
+    copts = COMPNAT_CPP_COPTS,
+    linkopts = COMPNAT_CPP_LINKOPTS,
+    deps = [
+        ":representation",
+        "//third_party:glog",
+    ],
+)
+
+cc_library(
+    name = "representation",
+    srcs = ["representation.cpp"],
+    hdrs = ["representation.hpp"],
+    copts = COMPNAT_CPP_COPTS,
+    linkopts = COMPNAT_CPP_LINKOPTS,
+    deps = [
+        "//third_party:glm",
+        "//third_party:glog",
+    ],
+)

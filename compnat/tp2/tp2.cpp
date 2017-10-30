@@ -23,7 +23,8 @@
 
 DEFINE_string(dataset, "", "File containing the dataset.");
 DEFINE_int32(seed, -1, "Initial seed (-1 to select at random).");
-DEFINE_int32(num_instances, 30, "Number of instances.");
+DEFINE_int32(num_ants, -1, "Number of ants (-1 for n - p).");
+DEFINE_int32(num_executions, 30, "Number of executions.");
 DEFINE_int32(num_iterations, 50, "Number of iterations of the algorithm.");
 
 namespace {
@@ -53,10 +54,10 @@ int main(int argc, char **argv) {
   google::InitGoogleLogging(argv[0]);
   google::InstallFailureSignalHandler();
 
-  const auto seeds = generateSeeds_(FLAGS_seed, FLAGS_num_instances);
+  const auto seeds = generateSeeds_(FLAGS_seed, FLAGS_num_executions);
   const auto dataset = tp2::Dataset(FLAGS_dataset.c_str());
 
-  for (int i = 0; i < FLAGS_num_instances; ++i) {
+  for (int i = 0; i < FLAGS_num_executions; ++i) {
   }
 
   return 0;
