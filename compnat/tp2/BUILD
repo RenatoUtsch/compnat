@@ -22,6 +22,7 @@ cc_binary(
     copts = COMPNAT_CPP_COPTS,
     linkopts = COMPNAT_CPP_LINKOPTS,
     deps = [
+        ":aco",
         ":representation",
         "//third_party:gflags",
         "//third_party:glog",
@@ -35,7 +36,21 @@ cc_library(
     copts = COMPNAT_CPP_COPTS,
     linkopts = COMPNAT_CPP_LINKOPTS,
     deps = [
+        ":gap",
         ":representation",
+        "//third_party:glog",
+    ],
+)
+
+cc_library(
+    name = "gap",
+    srcs = ["gap.cpp"],
+    hdrs = ["gap.hpp"],
+    copts = COMPNAT_CPP_COPTS,
+    linkopts = COMPNAT_CPP_LINKOPTS,
+    deps = [
+        ":representation",
+        "//third_party:glm",
         "//third_party:glog",
     ],
 )

@@ -19,6 +19,7 @@
 #include <gflags/gflags.h>
 #include <glog/logging.h>
 
+#include "aco.hpp"
 #include "representation.hpp"
 
 DEFINE_string(dataset, "", "File containing the dataset.");
@@ -56,8 +57,11 @@ int main(int argc, char **argv) {
 
   const auto seeds = generateSeeds_(FLAGS_seed, FLAGS_num_executions);
   const auto dataset = tp2::Dataset(FLAGS_dataset.c_str());
+  LOG(INFO) << dataset.numPoints() << " " << dataset.numMedians();
 
   for (int i = 0; i < FLAGS_num_executions; ++i) {
+    tp2::RNG rng(seeds[i]);
+    aco(rng, dataset, FLAGS_num_iterations, FLAGS_num_ants);
   }
 
   return 0;

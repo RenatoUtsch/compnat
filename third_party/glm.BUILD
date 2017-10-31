@@ -14,27 +14,14 @@
 
 package(default_visibility = ["//visibility:public"])
 
-alias(
-    name = "gflags",
-    actual = "@com_github_gflags_gflags//:gflags",
-)
+licenses(["notice"])  # MIT
 
-alias(
+cc_library(
     name = "glm",
-    actual = "@com_github_gtruc_glm//:glm",
-)
-
-alias(
-    name = "glog",
-    actual = "@com_google_glog//:glog",
-)
-
-alias(
-    name = "gtest",
-    actual = "@com_google_googletest//:gtest",
-)
-
-alias(
-    name = "gmock",
-    actual = "@com_google_googletest//:gmock",
+    hdrs = glob([
+        "glm/**/*.hpp",
+        "glm/**/*.h",
+        "glm/**/*.inl",
+    ]),
+    includes = ["."],
 )

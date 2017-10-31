@@ -17,65 +17,63 @@
 #include "aco.hpp"
 
 #include <functional>
+#include <iostream>
 #include <numeric>
 #include <set>
+#include <unordered_set>
+#include <utility>
 #include <vector>
 
 #include <glog/logging.h>
 
+#include "gap.hpp"
+
 namespace tp2 {
 namespace {
 
-std::vector<float> calcProbabilities_(const std::set<size_t> &unselected,
-                                      const std::vector<float> &pheromones) {
+size_t selectPoint_(RNG &rng, const std::set<size_t> &unselected,
+                    const std::vector<float> &pheromones) {
   const float sum =
       std::accumulate(unselected.begin(), unselected.end(), 0.0f,
                       [&](float a, size_t b) { return a + pheromones[b]; });
-
-  std::vector<std::pair<size_t, float>> probabilities;
-  for (size_t i : unselected) {
-    probabilities.emplace_back(i, pheromones[i] / sum);
-  }
-
-  return probabilities;
-}
-
-size_t selectPoint_(RNG &rng, const std::set<size_t> &unselected,
-                    const std::vector<float> &pheromones) {
-  const auto probabilities = calcProbabilities_(unselected, pheromones);
-  std::uniform_real_distribution<float> distr(0.0f, 1.0f);
+  std::uniform_real_distribution<float> distr(0.0f, sum);
 
   const float p = distr(rng);
   float boundary = 0.0f;
-  for (const auto &probPair : probabilities) {
-    const auto[i, prob] = probPair;
-    boundary += prob;
+  for (size_t i : unselected) {
+    boundary += pheromones[i];
     if (p <= boundary) {
-      return p;
+      return i;
     }
   }
 
-  LOG(ERROR) << "Should never get here, one prob should be selected.";
+  LOG(FATAL) << "Should never get here, one prob should be selected.";
 }
 
-std::vector<std::reference_wrapper<Point>>
-selectMedians_(const Dataset &dataset, const std::vector<float> &pheromones) {
-  std::vector<std::reference_wrapper<Point>> medians;
-  std::set<size_t> unselected(dataset.points().begin(), dataset.points().end());
-
-  for (size_t k = 0; k < dataset.numMedians(); ++k) {
-    const size_t p = selectPoint_(unselected, pheromones);
-    unselected.erase(p);
-    medians.emplace_back(dataset.point(p));
+/**
+ * Selects the medians, returns pair of <clients, medians>.
+ */
+std::pair<std::vector<size_t>, std::vector<size_t>>
+selectMedians_(RNG &rng, const std::vector<float> &pheromones,
+               size_t numMedians, size_t numPoints) {
+  std::set<size_t> unselected;
+  for (size_t i = 0; i < numPoints; ++i) {
+    unselected.insert(i);
   }
 
-  return medians;
+  std::vector<size_t> medians;
+  for (size_t i = 0; i < numMedians; ++i) {
+    const size_t p = selectPoint_(rng, unselected, pheromones);
+    unselected.erase(p);
+    medians.push_back(p);
+  }
+
+  return {std::vector<size_t>(unselected.begin(), unselected.end()), medians};
 }
 
 } // namespace
 
-void aco(const Dataset &dataset, int numAnts, int numIterations,
-         unsigned seed) {
+void aco(RNG &rng, const Dataset &dataset, int numIterations, int numAnts) {
   CHECK(numIterations > 0);
   if (numAnts < 0) {
     numAnts = dataset.numPoints() - dataset.numMedians();
@@ -85,8 +83,12 @@ void aco(const Dataset &dataset, int numAnts, int numIterations,
 
   for (int i = 0; i < numIterations; ++i) {
     for (int j = 0; j < numAnts; ++j) {
-      const auto medians = selectMedians_(dataset, pheromones);
+      const auto[clients, medians] = selectMedians_(
+          rng, pheromones, dataset.numMedians(), dataset.numPoints());
+      const auto assignedMedians = gap(dataset, clients, medians);
+      std::cout << assignedMedians.size() << " ";
     }
+    std::cout << std::endl;
   }
 }
 

@@ -45,7 +45,15 @@ http_archive(
 )
 
 new_http_archive(
-    name = "com_github_google_glog",
+    name = "com_github_gtruc_glm",
+    build_file = "third_party/glm.BUILD",
+    sha256 = "0b4c56d74618235ffe8d92f44ec7daef9506923c51762546df7ea4fc8e21face",
+    strip_prefix = "glm-0.9.8.5",
+    urls = ["https://github.com/g-truc/glm/archive/0.9.8.5.zip"],
+)
+
+new_http_archive(
+    name = "com_google_glog",
     build_file = "third_party/glog.BUILD",
     sha256 = "267103f8a1e9578978aa1dc256001e6529ef593e5aea38193d31c2872ee025e8",
     strip_prefix = "glog-0.3.5",
@@ -53,7 +61,7 @@ new_http_archive(
 )
 
 new_http_archive(
-    name = "com_github_google_googletest",
+    name = "com_google_googletest",
     build_file = "third_party/googletest.BUILD",
     sha256 = "f3ed3b58511efd272eb074a3a6d6fb79d7c2e6a0e374323d1e6bcbcc1ef141bf",
     strip_prefix = "googletest-release-1.8.0",

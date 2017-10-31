@@ -14,15 +14,23 @@
  * limitations under the License.
  */
 
-#ifndef COMPNAT_TP2_ACO_HPP
-#define COMPNAT_TP2_ACO_HPP
+#ifndef COMPNAT_TP2_GAP_HPP
+#define COMPNAT_TP2_GAP_HPP
+
+#include <vector>
 
 #include "representation.hpp"
 
 namespace tp2 {
 
-void aco(RNG &rng, const Dataset &dataset, int numIterations, int numAnts);
+/**
+ * Solves the GAP problem. Returns the client -> median assignment vector. If
+ * empty, it's not possible to solve the problem.
+ */
+std::vector<size_t> gap(const Dataset &dataset,
+                        const std::vector<size_t> &clients,
+                        const std::vector<size_t> &medians);
 
 } // namespace tp2
 
-#endif // !COMPNAT_TP2_ACO_HPP
+#endif // !COMPNAT_TP2_GAP_HPP

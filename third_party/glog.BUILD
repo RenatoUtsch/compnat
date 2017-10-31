@@ -87,10 +87,10 @@ cc_library(
 cc_fix_config(
     name = "gen_headers",
     files = {
-        "src/glog/logging.h.in": "glog/logging.h",
-        "src/glog/raw_logging.h.in": "glog/raw_logging.h",
-        "src/glog/stl_logging.h.in": "glog/stl_logging.h",
-        "src/glog/vlog_is_on.h.in": "glog/vlog_is_on.h",
+        "src/glog/logging.h.in": "src/glog/logging.h",
+        "src/glog/raw_logging.h.in": "src/glog/raw_logging.h",
+        "src/glog/stl_logging.h.in": "src/glog/stl_logging.h",
+        "src/glog/vlog_is_on.h.in": "src/glog/vlog_is_on.h",
     },
     values = {
         "ac_cv_have_unistd_h": "1",
@@ -107,7 +107,7 @@ cc_fix_config(
         "ac_cv___attribute___noreturn": "__attribute__((noreturn))",
         "ac_cv___attribute___printf_4_5": "__attribute__((__format__ (__printf__, 4, 5)))",
     },
-    includes = ["."],
+    includes = ["src"],
     visibility = ["//visibility:private"],
 )
 
