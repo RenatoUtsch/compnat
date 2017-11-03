@@ -37,7 +37,10 @@ namespace {
  */
 std::vector<unsigned> generateSeeds_(int seed, int numSeeds) {
   std::random_device rd;
-  tp2::RNG rng(seed == -1 ? rd() : (unsigned)seed);
+  const unsigned realSeed = seed == -1 ? rd() : (unsigned)seed;
+  LOG(INFO) << "seed: " << realSeed;
+
+  tp2::RNG rng(realSeed);
   std::uniform_int_distribution<unsigned> distr;
 
   std::vector<unsigned> seeds;

@@ -20,6 +20,7 @@
 #include <utility>
 
 #include <glm/glm.hpp>
+#include <glm/gtx/norm.hpp>
 #include <glog/logging.h>
 
 #include "representation.hpp"
@@ -27,27 +28,40 @@
 namespace tp2 {
 namespace {
 
-std::vector<std::pair<size_t, std::vector<size_t>>>
+std::vector<std::pair<size_t, std::vector<std::pair<size_t, float>>>>
 buildSortedClientMedians_(const Dataset &dataset,
                           const std::vector<size_t> &clients,
                           const std::vector<size_t> &medians) {
-  std::vector<std::pair<size_t, std::vector<size_t>>> sortedClientMedians;
-  for (size_t i : clients) {
-    auto clientMedians = medians;
-    std::sort(clientMedians.begin(), clientMedians.end(),
-              [&](size_t a, size_t b) {
-                return glm::distance(dataset.point(i).position,
-                                     dataset.point(a).position) <
-                       glm::distance(dataset.point(i).position,
-                                     dataset.point(b).position);
-              });
+  // God forgive me because I have sinned
+  // Vector of (pair of (client index, vector of (pair of (median index,
+  // distance from client to median))))
+  std::vector<std::pair<size_t, std::vector<std::pair<size_t, float>>>>
+      sortedClientMedians;
+  for (size_t client : clients) {
+    std::vector<std::pair<size_t, float>> clientMedians;
+    for (size_t median : medians) {
+      clientMedians.emplace_back(median,
+                                 glm::distance(dataset.point(client).position,
+                                               dataset.point(median).position));
+    }
+    std::sort(
+        clientMedians.begin(), clientMedians.end(),
+        [&](const auto &a, const auto &b) { return a.second < b.second; });
 
-    sortedClientMedians.emplace_back(clients[i], std::move(clientMedians));
+    sortedClientMedians.emplace_back(client, std::move(clientMedians));
   }
 
-  std::sort(
-      sortedClientMedians.begin(), sortedClientMedians.end(),
-      [](const auto &a, const auto &b) { return a.second[0] < b.second[0]; });
+  std::sort(sortedClientMedians.begin(), sortedClientMedians.end(),
+            [&](const auto &a, const auto &b) {
+              // The article's GAP heuristic is broken. If you sort by the
+              // distance to the nearest median, you risk not having enough
+              // capacity to allocate a client that demands a lot. The solution
+              // is to sort by the client's demand in descending order,
+              // guaranteeing they will always be attributed first.
+              return dataset.point(a.first).demand >
+                     dataset.point(b.first).demand;
+              // return a.second[0].second < b.second[0].second;
+            });
 
   return sortedClientMedians;
 }
@@ -70,9 +84,10 @@ std::vector<size_t> gap(const Dataset &dataset,
 
   for (const auto &p : sortedClientMedians) {
     const auto & [ client, clientMedians ] = p;
+    const float demand = dataset.point(client).demand;
     bool foundMedian = false;
-    for (size_t median : clientMedians) {
-      const float demand = dataset.point(client).demand;
+    for (const auto &m : clientMedians) {
+      const size_t median = m.first;
       if (demand <= capacities[median]) {
         capacities[median] -= demand;
         assignedMedians[client] = median;
@@ -80,8 +95,10 @@ std::vector<size_t> gap(const Dataset &dataset,
         break;
       }
     }
-    LOG(ERROR) << "Invalid median attribution found!";
-    return {};
+    if (!foundMedian) {
+      LOG(ERROR) << "Invalid median attribution found! client: " << client;
+      return {};
+    }
   }
 
   return assignedMedians;

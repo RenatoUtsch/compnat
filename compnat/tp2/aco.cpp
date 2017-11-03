@@ -17,7 +17,6 @@
 #include "aco.hpp"
 
 #include <functional>
-#include <iostream>
 #include <numeric>
 #include <set>
 #include <unordered_set>
@@ -86,9 +85,7 @@ void aco(RNG &rng, const Dataset &dataset, int numIterations, int numAnts) {
       const auto[clients, medians] = selectMedians_(
           rng, pheromones, dataset.numMedians(), dataset.numPoints());
       const auto assignedMedians = gap(dataset, clients, medians);
-      std::cout << assignedMedians.size() << " ";
     }
-    std::cout << std::endl;
   }
 }
 
