@@ -19,9 +19,29 @@
 
 #include "representation.hpp"
 
+#include <limits>
+
 namespace tp2 {
 
-void aco(RNG &rng, const Dataset &dataset, int numIterations, int numAnts);
+/// Represents a solution built with the algorithm.
+struct Solution {
+  /// Sum of distances of all clients to the medians.
+  float distance;
+
+  /// The medians selected in the solution.
+  std::vector<size_t> medians;
+
+  Solution() : distance(FLT_MAX) {}
+
+  Solution(const Solution &other) = default;
+  Solution &operator=(const Solution &other) = default;
+
+  Solution(float distance, std::vector<size_t> &&medians = {})
+      : distance(distance), medians(std::move(medians)) {}
+};
+
+void aco(RNG &rng, const Dataset &dataset, int numIterations, int numAnts,
+         float decay);
 
 } // namespace tp2
 

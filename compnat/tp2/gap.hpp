@@ -24,12 +24,11 @@
 namespace tp2 {
 
 /**
- * Solves the GAP problem. Returns the client -> median assignment vector. If
+ * Solves the GAP problem. Returns the solution distance. If
  * empty, it's not possible to solve the problem.
  */
-std::vector<size_t> gap(const Dataset &dataset,
-                        const std::vector<size_t> &clients,
-                        const std::vector<size_t> &medians);
+float gap(const Dataset &dataset, const std::vector<size_t> &clients,
+          const std::vector<size_t> &medians);
 
 } // namespace tp2
 

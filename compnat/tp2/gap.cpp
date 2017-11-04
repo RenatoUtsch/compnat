@@ -32,7 +32,7 @@ std::vector<std::pair<size_t, std::vector<std::pair<size_t, float>>>>
 buildSortedClientMedians_(const Dataset &dataset,
                           const std::vector<size_t> &clients,
                           const std::vector<size_t> &medians) {
-  // God forgive me because I have sinned
+  // Forgive me Father, for I have sinned
   // Vector of (pair of (client index, vector of (pair of (median index,
   // distance from client to median))))
   std::vector<std::pair<size_t, std::vector<std::pair<size_t, float>>>>
@@ -68,29 +68,27 @@ buildSortedClientMedians_(const Dataset &dataset,
 
 } // namespace
 
-std::vector<size_t> gap(const Dataset &dataset,
-                        const std::vector<size_t> &clients,
-                        const std::vector<size_t> &medians) {
+float gap(const Dataset &dataset, const std::vector<size_t> &clients,
+          const std::vector<size_t> &medians) {
   const auto sortedClientMedians =
       buildSortedClientMedians_(dataset, clients, medians);
 
   std::vector<float> capacities(dataset.numPoints(), 0.0f);
-  std::vector<size_t> assignedMedians(dataset.numPoints());
   for (size_t median : medians) {
     const auto &p = dataset.point(median);
     capacities[median] = p.capacity - p.demand;
-    assignedMedians[median] = median;
   }
 
+  float solution = 0.0f;
   for (const auto &p : sortedClientMedians) {
     const auto & [ client, clientMedians ] = p;
     const float demand = dataset.point(client).demand;
     bool foundMedian = false;
     for (const auto &m : clientMedians) {
-      const size_t median = m.first;
+      const auto & [ median, distance ] = m;
       if (demand <= capacities[median]) {
         capacities[median] -= demand;
-        assignedMedians[client] = median;
+        solution += distance;
         foundMedian = true;
         break;
       }
@@ -101,7 +99,7 @@ std::vector<size_t> gap(const Dataset &dataset,
     }
   }
 
-  return assignedMedians;
+  return solution;
 }
 
 } // namespace tp2

@@ -27,6 +27,7 @@ DEFINE_int32(seed, -1, "Initial seed (-1 to select at random).");
 DEFINE_int32(num_ants, -1, "Number of ants (-1 for n - p).");
 DEFINE_int32(num_executions, 30, "Number of executions.");
 DEFINE_int32(num_iterations, 50, "Number of iterations of the algorithm.");
+DEFINE_double(decay, 0.01f, "Pheromone decay rate.");
 
 namespace {
 /**
@@ -64,7 +65,7 @@ int main(int argc, char **argv) {
 
   for (int i = 0; i < FLAGS_num_executions; ++i) {
     tp2::RNG rng(seeds[i]);
-    aco(rng, dataset, FLAGS_num_iterations, FLAGS_num_ants);
+    aco(rng, dataset, FLAGS_num_iterations, FLAGS_num_ants, FLAGS_decay);
   }
 
   return 0;
