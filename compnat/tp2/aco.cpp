@@ -57,68 +57,17 @@ std::vector<std::vector<float>> calcDistances_(const Dataset &dataset) {
   return distances;
 }
 
-/**
- * Allocates clients to the given potential median, until it is full. Returns
- * the heuristic weight.
- */
-float informationHeuristicAllocate_(
-    size_t median, const std::vector<size_t> &points,
-    const std::vector<std::vector<float>> &distances, const Dataset &dataset) {
-  size_t numNodes = 0;
-  float sumDistance = 0.0f;
-  float capacity =
-      dataset.point(median).capacity - dataset.point(median).demand;
-  for (size_t point : points) {
-    if (median == point) {
-      continue;
-    }
-    if (capacity <= 1e-6f) {
-      break;
-    }
-
-    const float demand = dataset.point(point).demand;
-    if (capacity - demand >= 0.0f) {
-      ++numNodes;
-      sumDistance += distances[median][point];
-      capacity -= demand;
-    }
-  }
-
-  return (float)numNodes / sumDistance;
-}
-
-/**
- * Calculates the information heuristic weight for all points.
- */
-std::vector<float>
-informationHeuristic_(const Dataset &dataset,
-                      const std::vector<std::vector<float>> &distances) {
-  std::vector<size_t> points(dataset.numPoints());
-  std::iota(points.begin(), points.end(), 0);
-
-  std::vector<float> heuristicWeights(dataset.numPoints());
-  for (size_t i = 0; i < dataset.numPoints(); ++i) {
-    std::sort(points.begin(), points.end(),
-              [&](size_t a, size_t b) { return distances[a] < distances[b]; });
-
-    heuristicWeights[i] =
-        informationHeuristicAllocate_(i, points, distances, dataset);
-  }
-
-  return heuristicWeights;
-}
-
 size_t selectPoint_(RNG &rng, const std::set<size_t> &unselected,
-                    const std::vector<float> &unselectedWeights) {
-  const float sum = std::accumulate(
-      unselected.begin(), unselected.end(), 0.0f,
-      [&](float a, size_t b) { return a + unselectedWeights[b]; });
+                    const std::vector<float> &pheromones) {
+  const float sum =
+      std::accumulate(unselected.begin(), unselected.end(), 0.0f,
+                      [&](float a, size_t b) { return a + pheromones[b]; });
   std::uniform_real_distribution<float> distr(0.0f, sum);
 
   const float p = distr(rng);
   float boundary = 0.0f;
   for (size_t i : unselected) {
-    boundary += unselectedWeights[i];
+    boundary += pheromones[i];
     if (p <= boundary) {
       return i;
     }
@@ -132,19 +81,15 @@ size_t selectPoint_(RNG &rng, const std::set<size_t> &unselected,
  */
 std::pair<std::vector<size_t>, std::vector<size_t>>
 selectMedians_(RNG &rng, const std::vector<float> &pheromones,
-               const std::vector<float> &heuristics, float alpha, float beta,
                size_t numMedians, size_t numPoints) {
   std::set<size_t> unselected;
-  std::vector<float> unselectedWeights(numPoints);
   for (size_t i = 0; i < numPoints; ++i) {
     unselected.insert(i);
-    unselectedWeights[i] =
-        std::pow(pheromones[i], alpha) * std::pow(heuristics[i], beta);
   }
 
   std::vector<size_t> medians;
   for (size_t i = 0; i < numMedians; ++i) {
-    const size_t p = selectPoint_(rng, unselected, unselectedWeights);
+    const size_t p = selectPoint_(rng, unselected, pheromones);
     unselected.erase(p);
     medians.push_back(p);
   }
@@ -176,7 +121,8 @@ void updatePheromones_(std::vector<float> &pheromones, float decay,
     const float delta = 1.0f - ((localBest.distance - globalBest.distance) /
                                 (localWorst.distance - localBest.distance));
     const float update = decay * (delta - pheromones[median]);
-    pheromones[median] += std::min(TMax, std::max(TMin, update));
+    pheromones[median] =
+        std::min(TMax, std::max(TMin, pheromones[median] + update));
   }
 
   if (localBest.distance < globalBest.distance) {
@@ -202,30 +148,33 @@ void stagnationControl_(std::vector<float> &pheromones, size_t numPoints,
 
 } // namespace
 
-void aco(RNG &rng, const Dataset &dataset, int numIterations, int numAnts,
-         float decay, float alpha, float beta) {
+Result aco(RNG &rng, const Dataset &dataset, int numIterations, int numAnts,
+           float decay) {
   CHECK(numIterations > 0);
   if (numAnts < 0) {
     numAnts = dataset.numPoints() - dataset.numMedians();
   }
 
   const auto &distances = calcDistances_(dataset);
-  const auto &heuristics = informationHeuristic_(dataset, distances);
-
   std::vector<float> pheromones(dataset.numPoints(), TInitial);
 
+  std::vector<float> globalBests(numIterations);
+  std::vector<float> localBests(numIterations);
+  std::vector<float> localWorsts(numIterations);
   Solution globalBest;
   for (int i = 0; i < numIterations; ++i) {
     std::vector<Solution> solutions;
     for (int j = 0; j < numAnts; ++j) {
-      auto[clients, medians] =
-          selectMedians_(rng, pheromones, heuristics, alpha, beta,
-                         dataset.numMedians(), dataset.numPoints());
+      auto[clients, medians] = selectMedians_(
+          rng, pheromones, dataset.numMedians(), dataset.numPoints());
       const float distance = gap(dataset, clients, medians, distances);
       solutions.emplace_back(distance, std::move(medians));
     }
 
     auto[localBest, localWorst] = findBestAndWorstSolutions_(solutions);
+    localBests[i] = localBest.distance;
+    localWorsts[i] = localWorst.distance;
+
     LOG(INFO) << "  Iteration " << i
               << "\t| globalBest: " << globalBest.distance
               << "\t| localBest: " << localBest.distance
@@ -233,7 +182,11 @@ void aco(RNG &rng, const Dataset &dataset, int numIterations, int numAnts,
 
     updatePheromones_(pheromones, decay, globalBest, localBest, localWorst);
     stagnationControl_(pheromones, dataset.numPoints(), dataset.numMedians());
+    globalBests[i] = globalBest.distance;
   }
+
+  return Result(std::move(globalBests), std::move(localBests),
+                std::move(localWorsts));
 }
 
 } // namespace tp2

@@ -14,23 +14,23 @@
  * limitations under the License.
  */
 
+#include <fstream>
 #include <random>
 
 #include <gflags/gflags.h>
 #include <glog/logging.h>
 
 #include "aco.hpp"
+#include "compnat/tp2/results/results_generated.h"
 #include "representation.hpp"
 
 DEFINE_string(dataset, "", "File containing the dataset.");
+DEFINE_string(output_file, "", "Output file with the results.");
 DEFINE_int32(seed, -1, "Initial seed (-1 to select at random).");
 DEFINE_int32(num_ants, -1, "Number of ants (-1 for n - p).");
 DEFINE_int32(num_executions, 30, "Number of executions.");
 DEFINE_int32(num_iterations, 50, "Number of iterations of the algorithm.");
 DEFINE_double(decay, 0.01f, "Pheromone decay rate.");
-DEFINE_double(alpha, 3.0f, "Pheromone weight when selecting a median.");
-DEFINE_double(beta, 1.0f,
-              "Information heuristic weight when selecting a median.");
 
 namespace {
 /**
@@ -55,6 +55,70 @@ std::vector<unsigned> generateSeeds_(int seed, int numSeeds) {
   return seeds;
 }
 
+void saveToFile_(const std::string &outputFile, const uint8_t *buf,
+                 size_t size) {
+  std::ofstream out(outputFile, std::ofstream::out | std::ofstream::trunc |
+                                    std::ofstream::binary);
+  CHECK(out.is_open());
+
+  out.write((const char *)buf, size);
+}
+
+flatbuffers::Offset<tp2::results::Params>
+buildParams_(flatbuffers::FlatBufferBuilder &builder) {
+  tp2::results::ParamsBuilder paramsBuilder(builder);
+  paramsBuilder.add_seed(FLAGS_seed);
+  paramsBuilder.add_numExecutions(FLAGS_num_executions);
+  paramsBuilder.add_numIterations(FLAGS_num_iterations);
+  paramsBuilder.add_numAnts(FLAGS_num_ants);
+  paramsBuilder.add_decay(FLAGS_decay);
+  return paramsBuilder.Finish();
+}
+
+flatbuffers::Offset<
+    flatbuffers::Vector<flatbuffers::Offset<tp2::results::Iteration>>>
+buildIterations_(flatbuffers::FlatBufferBuilder &builder,
+                 const std::vector<tp2::Result> &results) {
+  std::vector<flatbuffers::Offset<tp2::results::Iteration>> iterations;
+  for (int i = 0; i < FLAGS_num_iterations; ++i) {
+    std::vector<float> globalBests(FLAGS_num_executions);
+    std::vector<float> localBests(FLAGS_num_executions);
+    std::vector<float> localWorsts(FLAGS_num_executions);
+    for (int j = 0; j < FLAGS_num_executions; ++j) {
+      globalBests[j] = results[j].globalBests[i];
+      localBests[j] = results[j].localBests[i];
+      localWorsts[j] = results[j].localWorsts[i];
+    }
+
+    auto globalBestsVector = builder.CreateVector(globalBests);
+    auto localBestsVector = builder.CreateVector(localBests);
+    auto localWorstsVector = builder.CreateVector(localWorsts);
+
+    tp2::results::IterationBuilder iterationBuilder(builder);
+    iterationBuilder.add_globalBests(globalBestsVector);
+    iterationBuilder.add_localBests(localBestsVector);
+    iterationBuilder.add_localWorsts(localWorstsVector);
+    iterations.push_back(iterationBuilder.Finish());
+  }
+
+  return builder.CreateVector(iterations);
+}
+
+void buildAndWriteResults_(const std::string &outputFile,
+                           const std::vector<tp2::Result> &results) {
+  flatbuffers::FlatBufferBuilder builder;
+
+  auto params = buildParams_(builder);
+  auto iterations = buildIterations_(builder, results);
+
+  tp2::results::ResultsBuilder resultsBuilder(builder);
+  resultsBuilder.add_params(params);
+  resultsBuilder.add_iterations(iterations);
+  builder.Finish(resultsBuilder.Finish());
+
+  saveToFile_(outputFile, builder.GetBufferPointer(), builder.GetSize());
+}
+
 } // namespace
 
 int main(int argc, char **argv) {
@@ -64,13 +128,15 @@ int main(int argc, char **argv) {
 
   const auto seeds = generateSeeds_(FLAGS_seed, FLAGS_num_executions);
   const auto dataset = tp2::Dataset(FLAGS_dataset.c_str());
-  LOG(INFO) << dataset.numPoints() << " " << dataset.numMedians();
 
+  std::vector<tp2::Result> results(FLAGS_num_executions);
   for (int i = 0; i < FLAGS_num_executions; ++i) {
     tp2::RNG rng(seeds[i]);
-    aco(rng, dataset, FLAGS_num_iterations, FLAGS_num_ants, FLAGS_decay,
-        FLAGS_alpha, FLAGS_beta);
+    results[i] =
+        aco(rng, dataset, FLAGS_num_iterations, FLAGS_num_ants, FLAGS_decay);
   }
+
+  buildAndWriteResults_(FLAGS_output_file, results);
 
   return 0;
 }

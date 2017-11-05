@@ -24,6 +24,7 @@ cc_binary(
     deps = [
         ":aco",
         ":representation",
+        "//compnat/tp2/results",
         "//third_party:gflags",
         "//third_party:glog",
     ],

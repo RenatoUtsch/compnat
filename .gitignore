@@ -169,4 +169,4 @@ bazel-*
 
 # Project specific
 *.cnat
-
+*.cnt2

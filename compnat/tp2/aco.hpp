@@ -40,8 +40,21 @@ struct Solution {
       : distance(distance), medians(std::move(medians)) {}
 };
 
-void aco(RNG &rng, const Dataset &dataset, int numIterations, int numAnts,
-         float decay, float alpha, float beta);
+/// Represents the result for all generations.
+struct Result {
+  std::vector<float> globalBests, localBests, localWorsts;
+
+  Result() {}
+  Result(Result &&other) = default;
+  Result &operator=(Result &&other) = default;
+  Result(std::vector<float> &&globalBests, std::vector<float> &&localBests,
+         std::vector<float> &&localWorsts)
+      : globalBests(globalBests), localBests(localBests),
+        localWorsts(localWorsts) {}
+};
+
+Result aco(RNG &rng, const Dataset &dataset, int numIterations, int numAnts,
+           float decay);
 
 } // namespace tp2
 

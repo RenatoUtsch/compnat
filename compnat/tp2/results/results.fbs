@@ -1,0 +1,59 @@
+//
+// Copyright 2017 Renato Utsch
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//    http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+namespace tp2.results;
+file_identifier "CNT2";
+file_extension "cnt2";
+
+/// Parameters used during execution.
+table Params {
+  /// Global seed used to seed the executions.
+  seed: uint;
+
+  /// Number of executions.
+  numExecutions: uint;
+
+  /// Number of iterations.
+  numIterations: uint;
+
+  /// Number of ants.
+  numAnts: uint;
+
+  /// decay.
+  decay: float;
+}
+
+table Iteration {
+  /// Global bests, one float for each execution.
+  globalBests: [float];
+
+  /// Local bests, one float for each execution.
+  localBests: [float];
+
+  /// Local worsts, one float for each execution.
+  localWorsts: [float];
+}
+
+/// All results.
+table Results {
+  /// Parameters used during execution.
+  params: Params;
+
+  /// Statistics for each iteration.
+  iterations: [Iteration];
+}
+
+root_type Results;
