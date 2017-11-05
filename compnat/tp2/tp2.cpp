@@ -28,6 +28,9 @@ DEFINE_int32(num_ants, -1, "Number of ants (-1 for n - p).");
 DEFINE_int32(num_executions, 30, "Number of executions.");
 DEFINE_int32(num_iterations, 50, "Number of iterations of the algorithm.");
 DEFINE_double(decay, 0.01f, "Pheromone decay rate.");
+DEFINE_double(alpha, 3.0f, "Pheromone weight when selecting a median.");
+DEFINE_double(beta, 1.0f,
+              "Information heuristic weight when selecting a median.");
 
 namespace {
 /**
@@ -65,7 +68,8 @@ int main(int argc, char **argv) {
 
   for (int i = 0; i < FLAGS_num_executions; ++i) {
     tp2::RNG rng(seeds[i]);
-    aco(rng, dataset, FLAGS_num_iterations, FLAGS_num_ants, FLAGS_decay);
+    aco(rng, dataset, FLAGS_num_iterations, FLAGS_num_ants, FLAGS_decay,
+        FLAGS_alpha, FLAGS_beta);
   }
 
   return 0;

@@ -28,7 +28,8 @@ namespace tp2 {
  * empty, it's not possible to solve the problem.
  */
 float gap(const Dataset &dataset, const std::vector<size_t> &clients,
-          const std::vector<size_t> &medians);
+          const std::vector<size_t> &medians,
+          const std::vector<std::vector<float>> &distances);
 
 } // namespace tp2
 

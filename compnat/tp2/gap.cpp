@@ -20,7 +20,6 @@
 #include <utility>
 
 #include <glm/glm.hpp>
-#include <glm/gtx/norm.hpp>
 #include <glog/logging.h>
 
 #include "representation.hpp"
@@ -28,25 +27,19 @@
 namespace tp2 {
 namespace {
 
-std::vector<std::pair<size_t, std::vector<std::pair<size_t, float>>>>
+std::vector<std::pair<size_t, std::vector<size_t>>>
 buildSortedClientMedians_(const Dataset &dataset,
                           const std::vector<size_t> &clients,
-                          const std::vector<size_t> &medians) {
-  // Forgive me Father, for I have sinned
-  // Vector of (pair of (client index, vector of (pair of (median index,
-  // distance from client to median))))
-  std::vector<std::pair<size_t, std::vector<std::pair<size_t, float>>>>
-      sortedClientMedians;
+                          const std::vector<size_t> &medians,
+                          const std::vector<std::vector<float>> &distances) {
+  // Vector of client (in same order as clients vector) to ordered medians.
+  std::vector<std::pair<size_t, std::vector<size_t>>> sortedClientMedians;
   for (size_t client : clients) {
-    std::vector<std::pair<size_t, float>> clientMedians;
-    for (size_t median : medians) {
-      clientMedians.emplace_back(median,
-                                 glm::distance(dataset.point(client).position,
-                                               dataset.point(median).position));
-    }
-    std::sort(
-        clientMedians.begin(), clientMedians.end(),
-        [&](const auto &a, const auto &b) { return a.second < b.second; });
+    std::vector<size_t> clientMedians = medians;
+    std::sort(clientMedians.begin(), clientMedians.end(),
+              [&](size_t a, size_t b) {
+                return distances[client][a] < distances[client][b];
+              });
 
     sortedClientMedians.emplace_back(client, std::move(clientMedians));
   }
@@ -60,7 +53,6 @@ buildSortedClientMedians_(const Dataset &dataset,
               // guaranteeing they will always be attributed first.
               return dataset.point(a.first).demand >
                      dataset.point(b.first).demand;
-              // return a.second[0].second < b.second[0].second;
             });
 
   return sortedClientMedians;
@@ -69,9 +61,10 @@ buildSortedClientMedians_(const Dataset &dataset,
 } // namespace
 
 float gap(const Dataset &dataset, const std::vector<size_t> &clients,
-          const std::vector<size_t> &medians) {
+          const std::vector<size_t> &medians,
+          const std::vector<std::vector<float>> &distances) {
   const auto sortedClientMedians =
-      buildSortedClientMedians_(dataset, clients, medians);
+      buildSortedClientMedians_(dataset, clients, medians, distances);
 
   std::vector<float> capacities(dataset.numPoints(), 0.0f);
   for (size_t median : medians) {
@@ -84,8 +77,8 @@ float gap(const Dataset &dataset, const std::vector<size_t> &clients,
     const auto & [ client, clientMedians ] = p;
     const float demand = dataset.point(client).demand;
     bool foundMedian = false;
-    for (const auto &m : clientMedians) {
-      const auto & [ median, distance ] = m;
+    for (size_t median : clientMedians) {
+      const float distance = distances[client][median];
       if (demand <= capacities[median]) {
         capacities[median] -= demand;
         solution += distance;

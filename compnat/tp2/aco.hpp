@@ -41,7 +41,7 @@ struct Solution {
 };
 
 void aco(RNG &rng, const Dataset &dataset, int numIterations, int numAnts,
-         float decay);
+         float decay, float alpha, float beta);
 
 } // namespace tp2
 
