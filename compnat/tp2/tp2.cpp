@@ -131,10 +131,20 @@ int main(int argc, char **argv) {
 
   std::vector<tp2::Result> results(FLAGS_num_executions);
   for (int i = 0; i < FLAGS_num_executions; ++i) {
+    LOG(INFO) << "Execution " << i;
     tp2::RNG rng(seeds[i]);
     results[i] =
         aco(rng, dataset, FLAGS_num_iterations, FLAGS_num_ants, FLAGS_decay);
+    LOG(INFO) << "";
   }
+
+  float best = 0.0f;
+  for (const auto &result : results) {
+    best += result.globalBests[FLAGS_num_iterations - 1];
+  }
+  best /= (float)FLAGS_num_executions;
+
+  LOG(INFO) << "Mean global best: " << best;
 
   buildAndWriteResults_(FLAGS_output_file, results);
 
