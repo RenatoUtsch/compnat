@@ -117,7 +117,15 @@ findBestAndWorstSolutions_(const std::vector<Solution> &solutions) {
 void updatePheromones_(std::vector<float> &pheromones, float decay,
                        Solution &globalBest, Solution &localBest,
                        const Solution &localWorst) {
+  std::set<size_t> medians(globalBest.medians.begin(),
+                           globalBest.medians.end());
   for (const size_t median : localBest.medians) {
+    if (!medians.count(median)) {
+      medians.insert(median);
+    }
+  }
+
+  for (const size_t median : medians) {
     const float delta = 1.0f - ((localBest.distance - globalBest.distance) /
                                 (localWorst.distance - localBest.distance));
     const float update = decay * (delta - pheromones[median]);
@@ -151,9 +159,7 @@ void stagnationControl_(std::vector<float> &pheromones, size_t numPoints,
 Result aco(RNG &rng, const Dataset &dataset, int numIterations, int numAnts,
            float decay) {
   CHECK(numIterations > 0);
-  if (numAnts < 0) {
-    numAnts = dataset.numPoints() - dataset.numMedians();
-  }
+  CHECK(numAnts > 0);
 
   const auto &distances = calcDistances_(dataset);
   std::vector<float> pheromones(dataset.numPoints(), TInitial);

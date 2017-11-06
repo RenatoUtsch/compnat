@@ -65,12 +65,12 @@ void saveToFile_(const std::string &outputFile, const uint8_t *buf,
 }
 
 flatbuffers::Offset<tp2::results::Params>
-buildParams_(flatbuffers::FlatBufferBuilder &builder) {
+buildParams_(flatbuffers::FlatBufferBuilder &builder, int numAnts) {
   tp2::results::ParamsBuilder paramsBuilder(builder);
   paramsBuilder.add_seed(FLAGS_seed);
   paramsBuilder.add_numExecutions(FLAGS_num_executions);
   paramsBuilder.add_numIterations(FLAGS_num_iterations);
-  paramsBuilder.add_numAnts(FLAGS_num_ants);
+  paramsBuilder.add_numAnts(numAnts);
   paramsBuilder.add_decay(FLAGS_decay);
   return paramsBuilder.Finish();
 }
@@ -105,10 +105,11 @@ buildIterations_(flatbuffers::FlatBufferBuilder &builder,
 }
 
 void buildAndWriteResults_(const std::string &outputFile,
-                           const std::vector<tp2::Result> &results) {
+                           const std::vector<tp2::Result> &results,
+                           int numAnts) {
   flatbuffers::FlatBufferBuilder builder;
 
-  auto params = buildParams_(builder);
+  auto params = buildParams_(builder, numAnts);
   auto iterations = buildIterations_(builder, results);
 
   tp2::results::ResultsBuilder resultsBuilder(builder);
@@ -129,24 +130,34 @@ int main(int argc, char **argv) {
   const auto seeds = generateSeeds_(FLAGS_seed, FLAGS_num_executions);
   const auto dataset = tp2::Dataset(FLAGS_dataset.c_str());
 
+  int numAnts = FLAGS_num_ants;
+  if (numAnts < 0) {
+    numAnts = dataset.numPoints() - dataset.numMedians();
+  }
+
   std::vector<tp2::Result> results(FLAGS_num_executions);
+#pragma omp parallel for
   for (int i = 0; i < FLAGS_num_executions; ++i) {
     LOG(INFO) << "Execution " << i;
     tp2::RNG rng(seeds[i]);
-    results[i] =
-        aco(rng, dataset, FLAGS_num_iterations, FLAGS_num_ants, FLAGS_decay);
+    results[i] = aco(rng, dataset, FLAGS_num_iterations, numAnts, FLAGS_decay);
     LOG(INFO) << "";
   }
 
-  float best = 0.0f;
+  float best = FLT_MAX, mean = 0.0f;
   for (const auto &result : results) {
-    best += result.globalBests[FLAGS_num_iterations - 1];
+    const float x = result.globalBests[FLAGS_num_iterations - 1];
+    if (x < best) {
+      best = x;
+    }
+    mean += x;
   }
-  best /= (float)FLAGS_num_executions;
+  mean /= (float)FLAGS_num_executions;
 
-  LOG(INFO) << "Mean global best: " << best;
+  LOG(INFO) << "Global best: " << best;
+  LOG(INFO) << "Mean global best: " << mean;
 
-  buildAndWriteResults_(FLAGS_output_file, results);
+  buildAndWriteResults_(FLAGS_output_file, results, numAnts);
 
   return 0;
 }
